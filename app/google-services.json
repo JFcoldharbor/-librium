@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1074741979287",
+    "project_id": "equilibriumai-uspkn",
+    "storage_bucket": "equilibriumai-uspkn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074741979287:android:7cb4ef5078f2c0567521d2",
+        "android_client_info": {
+          "package_name": "com.example.equilibrium"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1074741979287-tothmnri8i6acudqhb809cfcipes39c6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBL4QGS0MWgEhMKPI4-jFBy-5NQu796w3w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1074741979287-tothmnri8i6acudqhb809cfcipes39c6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1074741979287-638u1nj0qoac58rlfv04a070t2r2t8ei.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "coldharbor1.equilibrium"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
