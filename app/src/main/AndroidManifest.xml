@@ -3,7 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.equilibrium">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="true"
@@ -14,20 +16,65 @@
         android:theme="@style/Theme.Equilibrium"
         tools:targetApi="31">
 
+        <!-- Main Activity - OAuth Login Screen -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Equilibrium">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".HomeActivity" />
-        <activity android:name=".RegisterActivity" />
-        <activity android:name=".AIAssistantActivity" />
-        <activity android:name=".StepDetailsActivity" />
+        <!-- AI Assistant Activity - Main Chat Interface -->
+        <activity
+            android:name=".AIAssistantActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
 
-    </application>  <!-- THIS CLOSING TAG MUST BE HERE -->
+        <!-- Home Activity - Card Based Interface (Legacy) -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
 
-</manifest>  <!-- AND THIS ONE TOO -->
+        <!-- Registration Activity -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+        <!-- Communication Activity - Emails/Texts/Contacts -->
+        <activity
+            android:name=".CommunicationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+        <!-- Wellness Activity -->
+        <activity
+            android:name=".StepDetailsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+        <!-- Calendar Activity -->
+        <activity
+            android:name=".CalendarActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+        <!-- Dashboard Activity -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+        <!-- Reminders Activity -->
+        <activity
+            android:name=".RemindersActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Equilibrium" />
+
+    </application>
+
+</manifest>

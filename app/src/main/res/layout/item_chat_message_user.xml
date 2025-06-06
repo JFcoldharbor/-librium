@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start"
+    android:padding="8dp">
+
+    <!-- AI Avatar - Simplified -->
+    <ImageView
+        android:id="@+id/ivAIAvatar"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="8dp"
+        android:layout_gravity="top"
+        android:src="@android:drawable/ic_dialog_info"
+        android:background="@android:color/holo_blue_light"
+        android:padding="6dp"
+        android:tint="@android:color/white" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="48dp"
+        app:cardBackgroundColor="#F5F5F5"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="2dp">
+
+        <TextView
+            android:id="@+id/tvAIMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:textColor="#212121"
+            android:textSize="16sp"
+            android:text="AI response here"
+            android:maxWidth="280dp" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>
