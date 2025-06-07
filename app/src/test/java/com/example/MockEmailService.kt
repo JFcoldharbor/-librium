@@ -30,7 +30,6 @@ class MockEmailService {
     }
 
     fun searchEmails(query: String): List<EmailCardData> {
-        // Filter emails based on query
         return getRecentEmails().filter { email ->
             email.subject.contains(query, ignoreCase = true) ||
                     email.sender.contains(query, ignoreCase = true) ||
