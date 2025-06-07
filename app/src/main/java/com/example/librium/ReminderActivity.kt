@@ -1,4 +1,4 @@
-package com.example.equilibrium
+package com.example.librium
 
 import android.app.*
 import android.content.Context

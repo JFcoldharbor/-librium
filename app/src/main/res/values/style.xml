@@ -1,44 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- Base Theme - Clean and Simple -->
-    <style name="Theme.Equilibrium" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Primary Colors -->
+    <!-- Base theme -->
+    <style name="Theme.Librium" parent="Theme.Material3.DayNight.NoActionBar">  <!-- CHANGED -->
         <item name="colorPrimary">#FF5722</item>
         <item name="colorPrimaryVariant">#E64100</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-
-        <!-- Secondary Colors -->
         <item name="colorSecondary">#FF9800</item>
-        <item name="colorOnSecondary">#FFFFFF</item>
-
-        <!-- Background Colors -->
-        <item name="android:colorBackground">#0F172A</item>
-        <item name="colorSurface">#1E293B</item>
-
-        <!-- Default status bar -->
         <item name="android:statusBarColor">#0F172A</item>
-        <item name="android:navigationBarColor">#0F172A</item>
     </style>
 
-    <!-- Immersive Theme - For Edge-to-Edge Experience -->
-    <style name="Theme.Equilibrium.Immersive" parent="Theme.Equilibrium">
-        <!-- Make system bars transparent -->
+    <!-- Immersive theme -->
+    <style name="Theme.Librium.Immersive" parent="Theme.Librium">  <!-- CHANGED -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-
-        <!-- Enable translucent system bars -->
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowTranslucentNavigation">true</item>
-
-        <!-- Draw behind system bars -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-
-        <!-- Let content extend behind system bars -->
         <item name="android:fitsSystemWindows">false</item>
-
-        <!-- Optional: Remove window background for performance -->
-        <item name="android:windowBackground">@android:color/transparent</item>
     </style>
-
 </resources>

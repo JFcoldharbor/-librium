@@ -1,6 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Equilibrium</string>
-
-    <string name="login_button">Login</string>
+    <string name="app_name">Librium</string>      <!-- CHANGED -->
+    <string name="default_web_client_id">YOUR_ACTUAL_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 
 </resources>

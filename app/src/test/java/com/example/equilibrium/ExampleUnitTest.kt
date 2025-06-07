@@ -1,4 +1,4 @@
-package com.example.equilibrium
+package com.example.librium
 
 import org.junit.Test
 
