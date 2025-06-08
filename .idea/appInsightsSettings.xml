@@ -6,6 +6,14 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.example.librium" />
+                  <option name="mobileSdkAppId" value="1:649037563020:android:ee2c83cd9f08bd72cee7a9" />
+                  <option name="projectId" value="librium-f1a78" />
+                  <option name="projectNumber" value="649037563020" />
+                </ConnectionSetting>
+              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />

@@ -1,386 +1,535 @@
 package com.example.librium
 
-import android.animation.ValueAnimator
 import android.content.Intent
-import android.graphics.*
+import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
+import android.view.GestureDetector
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
-import android.app.AlertDialog
-import android.speech.tts.TextToSpeech
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import kotlin.math.abs
 
-class MainActivity : AppCompatActivity() {
-    // Properties
-    private lateinit var currentInput: EditText
-    private lateinit var scrollView: ScrollView
+class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
+
+    // Navigation state
+    private var currentHub = 0 // -1 = Life Balance, 0 = Main, 1 = Work
+    private lateinit var gestureDetector: GestureDetector
     private lateinit var mainContainer: LinearLayout
-    private lateinit var motivationalCard: CardView
-    private lateinit var motivationalText: TextView
-    private lateinit var wellnessCard: CardView
-    private lateinit var wellnessContent: LinearLayout
-    private lateinit var scheduleCard: CardView
-    private lateinit var scheduleContent: LinearLayout
 
-    // AI Services
-    private var geminiService: GeminiAIService? = null
-    private lateinit var contextEngine: ContextEngine
-    private lateinit var textToSpeech: TextToSpeech
-    private var isTTSReady = false
+    // Simple variables - NO complications!
+    private var currentStepCount = 7542
+    private var unreadEmails = 3
+    private var todayMeetings = 2
+    private var balanceScore = 68
+    private var currentMood = "😊"
+    private var sleepHours = 7.5f
 
-    // Check-in scheduling
-    private val checkInHandler = Handler(Looper.getMainLooper())
-    private lateinit var checkInRunnable: Runnable
-    private var lastCheckInHour = -1
-
-    // Wellness stats rotation
-    private var currentStatIndex = 0
-    private val handler = Handler(Looper.getMainLooper())
-    private lateinit var statRotationRunnable: Runnable
-
+    // Constants for gesture detection
     companion object {
-        private const val TAG = "MainActivity"
-        private const val STAT_ROTATION_DELAY = 3000L
-        private const val CHANNEL_ID = "librium_ai_channel"
-        private const val NOTIFICATION_PERMISSION_CODE = 123
+        private const val SWIPE_THRESHOLD = 100
+        private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Main layout with gradient background
-        val mainLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = createGradientBackground()
-        }
+        // Initialize gesture detector
+        gestureDetector = GestureDetector(this, this)
 
-        // ScrollView setup
-        scrollView = ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-            )
-        }
+        // Create the layout
+        createNavigationLayout()
+    }
 
+    private fun createNavigationLayout() {
+        // Main container that will hold all hubs
         mainContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 0, 24, 24)
-        }
-
-        scrollView.addView(mainContainer)
-        mainLayout.addView(scrollView)
-
-        // Initialize services FIRST before creating cards
-        initializeServices()
-        createNotificationChannel()
-        requestNotificationPermission()
-
-        // Create header
-        createHeader(mainLayout)
-
-        // Create cards (AFTER services are initialized)
-        createMotivationalCard()
-        createWellnessCard()
-        createScheduleCard()
-        createQuickActionCards()
-
-        // Create root layout with floating button
-        val rootLayout = FrameLayout(this).apply {
-            addView(mainLayout)
-        }
-
-        // Add floating AI chat button
-        val aiChatButton = Button(this).apply {
-            text = "🤖"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(0xFFFF5722.toInt())
-            }
-            layoutParams = FrameLayout.LayoutParams(150, 150).apply {
-                gravity = Gravity.BOTTOM or Gravity.END
-                setMargins(0, 0, 32, 32)
-            }
-            elevation = 12f
-            setOnClickListener {
-                showAIChatDialog()
-            }
-        }
-        rootLayout.addView(aiChatButton)
-
-        setContentView(rootLayout)
-
-        // Start rotations and updates
-        startStatRotation()
-        scheduleAICheckIns()
-        updateScheduleCard()
-
-        // Periodic updates
-        handler.postDelayed(object : Runnable {
-            override fun run() {
-                updateMotivationalMessage()
-                updateScheduleCard()
-                handler.postDelayed(this, 60000)
-            }
-        }, 60000)
-    }
-
-    private fun initializeServices() {
-        try {
-            geminiService = GeminiAIService()
-            contextEngine = ContextEngine()
-
-            // Initialize Text-to-Speech
-            textToSpeech = TextToSpeech(this) { status ->
-                if (status == TextToSpeech.SUCCESS) {
-                    val result = textToSpeech.setLanguage(Locale.US)
-                    if (result != TextToSpeech.LANG_MISSING_DATA &&
-                        result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                        isTTSReady = true
-                        textToSpeech.setPitch(1.1f)
-                        textToSpeech.setSpeechRate(0.95f)
-                        Log.d(TAG, "Text-to-Speech initialized successfully")
-                    }
-                } else {
-                    Log.e(TAG, "Text-to-Speech initialization failed")
-                }
-            }
-
-            Log.d(TAG, "All services initialized successfully!")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize services", e)
-        }
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Librium AI Check-ins"
-            val descriptionText = "Wellness check-ins from your AI assistant"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    NOTIFICATION_PERMISSION_CODE
-                )
-            }
-        }
-    }
-
-    private fun scheduleAICheckIns() {
-        checkInRunnable = object : Runnable {
-            override fun run() {
-                val calendar = Calendar.getInstance()
-                val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-                // Only check in once per hour
-                if (hour != lastCheckInHour) {
-                    lastCheckInHour = hour
-
-                    when (hour) {
-                        9 -> performCheckIn("Morning check! How'd you sleep? 😴", true)
-                        12 -> performCheckIn("Lunch time! Have you eaten? 🥗", true)
-                        15 -> performCheckIn("Afternoon stretch? Your body needs movement! 🧘", false)
-                        18 -> performCheckIn("Evening wind-down. How was your day? 🌅", true)
-                    }
-                }
-
-                // Schedule next check (every 30 minutes)
-                checkInHandler.postDelayed(this, 1800000)
-            }
-        }
-        checkInHandler.post(checkInRunnable)
-    }
-
-    private fun performCheckIn(message: String, showDialog: Boolean) {
-        // Speak the check-in
-        speakText(message)
-
-        // Show notification
-        showCheckInNotification(message)
-
-        // Optionally show dialog
-        if (showDialog) {
-            showAICheckInDialog(message)
-        }
-    }
-
-    private fun showCheckInNotification(message: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-        }
-
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("🤖 Librium AI Check-in")
-            .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-
-        with(NotificationManagerCompat.from(this)) {
-            notify(System.currentTimeMillis().toInt(), builder.build())
-        }
-    }
-
-    private fun showAICheckInDialog(message: String) {
-        runOnUiThread {
-            AlertDialog.Builder(this)
-                .setTitle("🤖 Librium Check-In")
-                .setMessage(message)
-                .setPositiveButton("I'm good!") { _, _ ->
-                    speakText("Great to hear! Keep up the good work!")
-                }
-                .setNeutralButton("Let's talk") { _, _ ->
-                    showAIChatDialog()
-                }
-                .setNegativeButton("Not now", null)
-                .show()
-        }
-    }
-
-    private fun speakText(text: String) {
-        if (isTTSReady) {
-            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "LibriumSpeech")
-        }
-    }
-
-    private fun createGradientBackground(): GradientDrawable {
-        return GradientDrawable().apply {
-            orientation = GradientDrawable.Orientation.TOP_BOTTOM
-            colors = intArrayOf(
-                0xFF0F172A.toInt(),
-                0xFF1E1B3A.toInt()
+            setBackgroundColor(Color.parseColor("#0F172A"))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setPadding(20, 60, 20, 20)
+
+            // Enable touch events for gesture detection
+            setOnTouchListener { _, event ->
+                gestureDetector.onTouchEvent(event)
+                true
+            }
         }
+
+        // Load the current hub
+        loadCurrentHub()
+
+        setContentView(mainContainer)
     }
 
-    private fun createHeader(parent: ViewGroup) {
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(24, 48, 24, 24)
-            gravity = Gravity.CENTER_VERTICAL
+    private fun loadCurrentHub() {
+        // Clear the container
+        mainContainer.removeAllViews()
+
+        when (currentHub) {
+            -1 -> createLifeBalanceHub()
+            0 -> createMainHub()
+            1 -> createWorkHub()
         }
 
+        // Add navigation indicator at the bottom
+        addNavigationDots()
+    }
+
+    private fun createMainHub() {
+        // App title
         val title = TextView(this).apply {
-            text = "Librium AI"
-            textSize = 32f
-            setTextColor(Color.WHITE)
+            text = "LIBRIUM"
+            textSize = 42f
+            setTextColor(Color.parseColor("#FF5722"))
             typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
         }
-        header.addView(title)
+        mainContainer.addView(title)
 
-        parent.addView(header)
+        // Greeting
+        val greeting = TextView(this).apply {
+            text = "Welcome to your wellness journey!"
+            textSize = 18f
+            setTextColor(Color.parseColor("#94A3B8"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 40)
+        }
+        mainContainer.addView(greeting)
+
+        // Swipe hint
+        val swipeHint = TextView(this).apply {
+            text = "← Swipe for Work Hub | Life Balance Hub Swipe →"
+            textSize = 12f
+            setTextColor(Color.parseColor("#64748B"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+        }
+        mainContainer.addView(swipeHint)
+
+        // Create main cards
+        createWellnessCard(mainContainer)
+        createWorkCard(mainContainer)
+        createCommunicationCard(mainContainer)
     }
 
-    private fun createMotivationalCard() {
-        motivationalCard = CardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 16)
-            }
-            radius = 24f
-            cardElevation = 8f
-            setCardBackgroundColor(Color.TRANSPARENT)
-        }
-
-        val gradientBg = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = GradientDrawable().apply {
-                orientation = GradientDrawable.Orientation.TL_BR
-                colors = intArrayOf(
-                    0xFFFF5722.toInt(),
-                    0xFF9C27B0.toInt()
-                )
-                cornerRadius = 24f
-            }
-            setPadding(24, 24, 24, 24)
-        }
-
-        motivationalText = TextView(this).apply {
-            text = contextEngine.getWellnessPrompt()
-            textSize = 18f
-            setTextColor(Color.WHITE)
+    private fun createLifeBalanceHub() {
+        // Hub title
+        val title = TextView(this).apply {
+            text = "✨ LIFE BALANCE"
+            textSize = 36f
+            setTextColor(Color.parseColor("#8B5CF6"))
             typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
         }
-        gradientBg.addView(motivationalText)
+        mainContainer.addView(title)
 
-        val quote = TextView(this).apply {
-            text = contextEngine.getMotivationalQuote()
+        // Subtitle
+        val subtitle = TextView(this).apply {
+            text = "Your holistic wellness dashboard"
+            textSize = 16f
+            setTextColor(Color.parseColor("#94A3B8"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 30)
+        }
+        mainContainer.addView(subtitle)
+
+        // Balance score card
+        createBalanceScoreCard(mainContainer)
+
+        // Wellness stats card
+        createWellnessStatsCard(mainContainer)
+
+        // Mood tracker card
+        createMoodTrackerCard(mainContainer)
+    }
+
+    private fun createWorkHub() {
+        // Hub title
+        val title = TextView(this).apply {
+            text = "💼 WORK HUB"
+            textSize = 36f
+            setTextColor(Color.parseColor("#FF5722"))
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+        }
+        mainContainer.addView(title)
+
+        // Subtitle
+        val subtitle = TextView(this).apply {
+            text = "Navigate today's priorities"
+            textSize = 16f
+            setTextColor(Color.parseColor("#94A3B8"))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 30)
+        }
+        mainContainer.addView(subtitle)
+
+        // Today's priorities card
+        createPrioritiesCard(mainContainer)
+
+        // Quick stats card
+        createWorkStatsCard(mainContainer)
+
+        // Goals progress card
+        createGoalsCard(mainContainer)
+    }
+
+    // ================ MAIN HUB CARDS ================
+
+    private fun createWellnessCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B") {
+            try {
+                startActivity(Intent(this@MainActivity, WellnessActivity::class.java))
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Wellness feature coming soon!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val cardContent = createCardHeader(card, "💪", "Wellness Hub")
+
+        val statsText = TextView(this).apply {
+            text = "$currentStepCount steps today • Balance: $balanceScore%"
             textSize = 14f
-            setTextColor(0xFFFFFFFF.toInt())
+            setTextColor(Color.parseColor("#94A3B8"))
             setPadding(0, 8, 0, 0)
         }
-        gradientBg.addView(quote)
-
-        motivationalCard.addView(gradientBg)
-        mainContainer.addView(motivationalCard)
+        cardContent.addView(statsText)
     }
 
-    private fun createWellnessCard() {
-        wellnessCard = CardView(this).apply {
+    private fun createWorkCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B") {
+            Toast.makeText(this@MainActivity, "Work hub - swipe left for full view!", Toast.LENGTH_SHORT).show()
+        }
+
+        val cardContent = createCardHeader(card, "💼", "Work Hub")
+
+        val statsText = TextView(this).apply {
+            text = "$todayMeetings meetings today • 5 tasks pending"
+            textSize = 14f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 8, 0, 0)
+        }
+        cardContent.addView(statsText)
+    }
+
+    private fun createCommunicationCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B") {
+            try {
+                startActivity(Intent(this@MainActivity, CommunicationActivity::class.java))
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Communication feature coming soon!", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val cardContent = createCardHeader(card, "💬", "Communication")
+
+        val statsText = TextView(this).apply {
+            text = "$unreadEmails unread messages • Stay connected"
+            textSize = 14f
+            setTextColor(Color.parseColor("#94A3B8"))
+            setPadding(0, 8, 0, 0)
+        }
+        cardContent.addView(statsText)
+    }
+
+    // ================ LIFE BALANCE HUB CARDS ================
+
+    private fun createBalanceScoreCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#8B5CF6", null)
+
+        val cardContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24, 24, 24, 24)
+            gravity = Gravity.CENTER
+        }
+
+        // Big balance score
+        val scoreText = TextView(this).apply {
+            text = "$balanceScore%"
+            textSize = 48f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+        }
+        cardContent.addView(scoreText)
+
+        val labelText = TextView(this).apply {
+            text = "LIFE BALANCE SCORE"
+            textSize = 16f
+            setTextColor(Color.parseColor("#E2E8F0"))
+            gravity = Gravity.CENTER
+            setPadding(0, 8, 0, 0)
+        }
+        cardContent.addView(labelText)
+
+        val statusText = TextView(this).apply {
+            text = if (balanceScore >= 70) "EXCELLENT" else if (balanceScore >= 50) "GOOD" else "NEEDS ATTENTION"
+            textSize = 14f
+            setTextColor(if (balanceScore >= 70) Color.parseColor("#10B981") else Color.parseColor("#F59E0B"))
+            gravity = Gravity.CENTER
+            setPadding(0, 4, 0, 0)
+        }
+        cardContent.addView(statusText)
+
+        card.addView(cardContent)
+    }
+
+    private fun createWellnessStatsCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B", null)
+
+        val cardContent = createCardHeader(card, "📊", "Wellness Stats")
+
+        // Stats grid
+        val statsGrid = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 16, 0, 0)
+        }
+
+        val stats = listOf(
+            Triple("👟", "$currentStepCount", "Steps"),
+            Triple("😴", "${sleepHours}h", "Sleep"),
+            Triple("💧", "6/8", "Water"),
+            Triple("🧘", "15min", "Mindful")
+        )
+
+        stats.forEach { (icon, value, label) ->
+            val statContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            statContainer.addView(TextView(this).apply {
+                text = icon
+                textSize = 24f
+                gravity = Gravity.CENTER
+            })
+
+            statContainer.addView(TextView(this).apply {
+                text = value
+                textSize = 18f
+                setTextColor(Color.WHITE)
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setPadding(0, 4, 0, 2)
+            })
+
+            statContainer.addView(TextView(this).apply {
+                text = label
+                textSize = 12f
+                setTextColor(Color.parseColor("#94A3B8"))
+                gravity = Gravity.CENTER
+            })
+
+            statsGrid.addView(statContainer)
+        }
+
+        cardContent.addView(statsGrid)
+    }
+
+    private fun createMoodTrackerCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B", null)
+
+        val cardContent = createCardHeader(card, "😊", "Today's Mood")
+
+        val moodText = TextView(this).apply {
+            text = "Current mood: $currentMood"
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            setPadding(0, 8, 0, 8)
+        }
+        cardContent.addView(moodText)
+
+        val moodRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 8, 0, 0)
+        }
+
+        val moods = listOf("😔", "😐", "😊", "😄", "🤩")
+        moods.forEach { mood ->
+            val moodButton = TextView(this).apply {
+                text = mood
+                textSize = 28f
+                setPadding(12, 8, 12, 8)
+                if (mood == currentMood) {
+                    setBackgroundColor(Color.parseColor("#8B5CF6"))
+                }
+                setOnClickListener {
+                    currentMood = mood
+                    loadCurrentHub() // Refresh to show updated mood
+                    Toast.makeText(this@MainActivity, "Mood updated to $mood", Toast.LENGTH_SHORT).show()
+                }
+            }
+            moodRow.addView(moodButton)
+        }
+
+        cardContent.addView(moodRow)
+    }
+
+    // ================ WORK HUB CARDS ================
+
+    private fun createPrioritiesCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#FF5722", null)
+
+        val cardContent = createCardHeader(card, "🎯", "Today's Priorities")
+
+        val priorities = listOf(
+            "Call back Sarah Miller - Urgent",
+            "Review Q4 Budget Report",
+            "Prepare client presentation",
+            "Team sync at 3:00 PM"
+        )
+
+        priorities.forEach { priority ->
+            val priorityText = TextView(this).apply {
+                text = "• $priority"
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                setPadding(0, 4, 0, 4)
+            }
+            cardContent.addView(priorityText)
+        }
+    }
+
+    private fun createWorkStatsCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B", null)
+
+        val cardContent = createCardHeader(card, "📈", "Quick Stats")
+
+        val statsGrid = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 16, 0, 0)
+        }
+
+        val workStats = listOf(
+            Triple("📋", "8", "Tasks"),
+            Triple("📅", "$todayMeetings", "Meetings"),
+            Triple("📧", "$unreadEmails", "Emails"),
+            Triple("⏰", "6h", "Focus Time")
+        )
+
+        workStats.forEach { (icon, value, label) ->
+            val statContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            statContainer.addView(TextView(this).apply {
+                text = icon
+                textSize = 20f
+                gravity = Gravity.CENTER
+            })
+
+            statContainer.addView(TextView(this).apply {
+                text = value
+                textSize = 18f
+                setTextColor(Color.WHITE)
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+                setPadding(0, 4, 0, 2)
+            })
+
+            statContainer.addView(TextView(this).apply {
+                text = label
+                textSize = 12f
+                setTextColor(Color.parseColor("#94A3B8"))
+                gravity = Gravity.CENTER
+            })
+
+            statsGrid.addView(statContainer)
+        }
+
+        cardContent.addView(statsGrid)
+    }
+
+    private fun createGoalsCard(container: ViewGroup) {
+        val card = createStandardCard(container, "#1E293B", null)
+
+        val cardContent = createCardHeader(card, "🏆", "Q4 Goals Progress")
+
+        val goals = listOf(
+            Pair("Revenue Target", 78),
+            Pair("Client Acquisition", 85),
+            Pair("Team Growth", 65)
+        )
+
+        goals.forEach { (goal, progress) ->
+            val goalContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, 8, 0, 8)
+            }
+
+            val goalHeader = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+
+            goalHeader.addView(TextView(this).apply {
+                text = goal
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+
+            goalHeader.addView(TextView(this).apply {
+                text = "$progress%"
+                textSize = 14f
+                setTextColor(Color.parseColor("#10B981"))
+                typeface = Typeface.DEFAULT_BOLD
+            })
+
+            goalContainer.addView(goalHeader)
+
+            // Simple progress indicator
+            val progressBar = View(this).apply {
+                setBackgroundColor(Color.parseColor("#10B981"))
+                layoutParams = LinearLayout.LayoutParams(
+                    (resources.displayMetrics.widthPixels * progress / 100 * 0.8).toInt(),
+                    8
+                ).apply {
+                    topMargin = 4
+                }
+            }
+            goalContainer.addView(progressBar)
+
+            cardContent.addView(goalContainer)
+        }
+    }
+
+    // ================ HELPER METHODS ================
+
+    private fun createStandardCard(container: ViewGroup, backgroundColor: String, onClick: (() -> Unit)?): CardView {
+        val card = CardView(this).apply {
+            radius = 16f
+            cardElevation = 8f
+            setCardBackgroundColor(Color.parseColor(backgroundColor))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 0, 0, 16)
+                bottomMargin = 20
             }
-            radius = 24f
-            cardElevation = 8f
-            setCardBackgroundColor(0xFF1E293B.toInt())
-
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, WellnessActivity::class.java))
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            }
+            onClick?.let { setOnClickListener { it() } }
         }
+        container.addView(card)
+        return card
+    }
 
-        wellnessContent = LinearLayout(this).apply {
+    private fun createCardHeader(card: CardView, icon: String, title: String): LinearLayout {
+        val cardContent = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 24, 24, 24)
         }
@@ -391,638 +540,102 @@ class MainActivity : AppCompatActivity() {
         }
 
         header.addView(TextView(this).apply {
-            text = "💪 Wellness"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
-        })
-
-        header.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+            text = icon
+            textSize = 28f
+            setPadding(0, 0, 16, 0)
         })
 
         header.addView(TextView(this).apply {
-            text = "Tap for details →"
-            textSize = 12f
-            setTextColor(0xFF94A3B8.toInt())
-        })
-
-        wellnessContent.addView(header)
-
-        val statsContainer = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                200
-            )
-        }
-
-        createStatView("👟 Steps", "7,542", "/ 10,000", 0.75f, true).let {
-            statsContainer.addView(it)
-        }
-
-        createStatView("🔥 Calories", "1,850", "burned", 0.62f, false).let {
-            statsContainer.addView(it)
-        }
-
-        createStatView("❤️ Heart Rate", "72", "bpm", 0.9f, false).let {
-            statsContainer.addView(it)
-        }
-
-        createStatView("💧 Water", "5", "/ 8 glasses", 0.625f, false).let {
-            statsContainer.addView(it)
-        }
-
-        wellnessContent.addView(statsContainer)
-        wellnessCard.addView(wellnessContent)
-        mainContainer.addView(wellnessCard)
-    }
-
-    private fun createStatView(
-        icon: String,
-        value: String,
-        label: String,
-        progress: Float,
-        visible: Boolean
-    ): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            visibility = if (visible) View.VISIBLE else View.GONE
-            setPadding(0, 24, 0, 0)
-
-            addView(TextView(this@MainActivity).apply {
-                text = "$icon $value"
-                textSize = 36f
-                setTextColor(Color.WHITE)
-                typeface = Typeface.DEFAULT_BOLD
-                gravity = Gravity.CENTER
-            })
-
-            addView(TextView(this@MainActivity).apply {
-                text = label
-                textSize = 16f
-                setTextColor(0xFF94A3B8.toInt())
-                gravity = Gravity.CENTER
-                setPadding(0, 8, 0, 16)
-            })
-
-            addView(createProgressBar(progress))
-        }
-    }
-
-    private fun createProgressBar(progress: Float): View {
-        val progressContainer = FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                16
-            )
-        }
-
-        val bgBar = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            background = GradientDrawable().apply {
-                setColor(0xFF334155.toInt())
-                cornerRadius = 8f
-            }
-        }
-        progressContainer.addView(bgBar)
-
-        val progressBar = View(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                (resources.displayMetrics.widthPixels * progress * 0.8f).toInt(),
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
-            background = GradientDrawable().apply {
-                orientation = GradientDrawable.Orientation.LEFT_RIGHT
-                colors = intArrayOf(
-                    0xFFFF5722.toInt(),
-                    0xFF9C27B0.toInt()
-                )
-                cornerRadius = 8f
-            }
-        }
-        progressContainer.addView(progressBar)
-
-        return progressContainer
-    }
-
-    private fun createScheduleCard() {
-        scheduleCard = CardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, 16)
-            }
-            radius = 24f
-            cardElevation = 8f
-            setCardBackgroundColor(0xFF1E293B.toInt())
-
-            setOnClickListener {
-                startActivity(Intent(this@MainActivity, ScheduleActivity::class.java))
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            }
-        }
-
-        scheduleContent = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
-        }
-
-        val header = TextView(this).apply {
-            text = "📅 Today's Schedule"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, 16)
-        }
-        scheduleContent.addView(header)
-
-        scheduleCard.addView(scheduleContent)
-        mainContainer.addView(scheduleCard)
-    }
-
-    private fun updateScheduleCard() {
-        scheduleContent.removeAllViews()
-
-        scheduleContent.addView(TextView(this).apply {
-            text = "📅 Today's Schedule"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 0, 0, 16)
-        })
-
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val meetings = getScheduleForTime(currentHour)
-
-        meetings.forEach { (time, title, status) ->
-            val meetingView = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, 8, 0, 8)
-                gravity = Gravity.CENTER_VERTICAL
-            }
-
-            meetingView.addView(TextView(this).apply {
-                text = time
-                setTextColor(Color.WHITE)
-                textSize = 12f
-                background = GradientDrawable().apply {
-                    setColor(
-                        when (status) {
-                            "completed" -> 0xFF6B7280.toInt()
-                            "current" -> 0xFFFF5722.toInt()
-                            else -> 0xFF9C27B0.toInt()
-                        }
-                    )
-                    cornerRadius = 20f
-                }
-                setPadding(16, 8, 16, 8)
-            })
-
-            meetingView.addView(TextView(this).apply {
-                text = if (status == "completed") "✓ $title" else title
-                setTextColor(if (status == "completed") 0xFF94A3B8.toInt() else Color.WHITE)
-                textSize = 16f
-                setPadding(16, 0, 0, 0)
-            })
-
-            scheduleContent.addView(meetingView)
-        }
-
-        val nextMeeting = getNextMeeting(currentHour)
-        if (nextMeeting != null) {
-            scheduleContent.addView(TextView(this).apply {
-                text = "⏰ Reminder: $nextMeeting in 30 minutes"
-                textSize = 14f
-                setTextColor(0xFFFF5722.toInt())
-                setPadding(0, 16, 0, 0)
-            })
-        }
-    }
-
-    private fun getScheduleForTime(currentHour: Int): List<Triple<String, String, String>> {
-        val allMeetings = listOf(
-            Triple("9:00 AM", "Team Standup", if (currentHour > 9) "completed" else "upcoming"),
-            Triple(
-                "11:00 AM",
-                "Design Review",
-                if (currentHour > 11) "completed" else if (currentHour == 11) "current" else "upcoming"
-            ),
-            Triple(
-                "2:00 PM",
-                "Client Call",
-                if (currentHour > 14) "completed" else if (currentHour == 14) "current" else "upcoming"
-            ),
-            Triple(
-                "4:00 PM",
-                "Project Sync",
-                if (currentHour > 16) "completed" else if (currentHour == 16) "current" else "upcoming"
-            )
-        )
-
-        return allMeetings.filter { (_, _, status) ->
-            status == "current" ||
-                    (status == "completed" && allMeetings.count { it.third == "completed" } <= 2) ||
-                    (status == "upcoming" && allMeetings.count { it.third == "upcoming" } <= 2)
-        }
-    }
-
-    private fun getNextMeeting(currentHour: Int): String? {
-        return when {
-            currentHour < 9 -> "Team Standup"
-            currentHour < 11 -> "Design Review"
-            currentHour < 14 -> "Client Call"
-            currentHour < 16 -> "Project Sync"
-            else -> null
-        }
-    }
-
-    private fun createQuickActionCards() {
-        val actionsContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 0, 0, 16)
-        }
-
-        val emailCard = createActionCard("📧", "Communication", "Contacts") {
-            startActivity(Intent(this, CommunicationActivity::class.java))
-            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-        }
-        actionsContainer.addView(emailCard)
-
-        mainContainer.addView(actionsContainer)
-    }
-
-    private fun createActionCard(
-        icon: String,
-        title: String,
-        subtitle: String,
-        onClick: () -> Unit
-    ): CardView {
-        return CardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            radius = 20f
-            cardElevation = 4f
-            setCardBackgroundColor(0xFF1E293B.toInt())
-            setOnClickListener { onClick() }
-
-            val content = LinearLayout(this@MainActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                setPadding(16, 24, 16, 24)
-            }
-
-            content.addView(TextView(this@MainActivity).apply {
-                text = icon
-                textSize = 32f
-                gravity = Gravity.CENTER
-            })
-
-            content.addView(TextView(this@MainActivity).apply {
-                text = title
-                textSize = 16f
-                setTextColor(Color.WHITE)
-                typeface = Typeface.DEFAULT_BOLD
-                gravity = Gravity.CENTER
-                setPadding(0, 8, 0, 0)
-            })
-
-            content.addView(TextView(this@MainActivity).apply {
-                text = subtitle
-                textSize = 12f
-                setTextColor(0xFF94A3B8.toInt())
-                gravity = Gravity.CENTER
-            })
-
-            addView(content)
-        }
-    }
-
-    private fun startStatRotation() {
-        statRotationRunnable = object : Runnable {
-            override fun run() {
-                val currentStat =
-                    (wellnessContent.getChildAt(1) as FrameLayout).getChildAt(currentStatIndex)
-                currentStat.animate()
-                    .alpha(0f)
-                    .setDuration(300)
-                    .withEndAction {
-                        currentStat.visibility = View.GONE
-
-                        currentStatIndex = (currentStatIndex + 1) % 4
-                        val nextStat = (wellnessContent.getChildAt(1) as FrameLayout).getChildAt(
-                            currentStatIndex
-                        )
-                        nextStat.visibility = View.VISIBLE
-                        nextStat.alpha = 0f
-                        nextStat.animate()
-                            .alpha(1f)
-                            .setDuration(300)
-                            .start()
-                    }
-                    .start()
-
-                handler.postDelayed(this, STAT_ROTATION_DELAY)
-            }
-        }
-        handler.postDelayed(statRotationRunnable, STAT_ROTATION_DELAY)
-    }
-
-    private fun updateMotivationalMessage() {
-        motivationalText.text = contextEngine.getWellnessPrompt()
-
-        motivationalCard.animate()
-            .scaleX(1.05f)
-            .scaleY(1.05f)
-            .setDuration(300)
-            .withEndAction {
-                motivationalCard.animate()
-                    .scaleX(1f)
-                    .scaleY(1f)
-                    .setDuration(300)
-                    .start()
-            }
-            .start()
-    }
-
-    private fun showAIChatDialog() {
-        // Create input first
-        val input = EditText(this).apply {
-            hint = "Share your thoughts, dreams, or feelings..."
-            setTextColor(Color.BLACK)
-            minLines = 2
-        }
-
-        val contextText = TextView(this).apply {
-            val timeGreeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
-                in 5..11 -> "Morning vibes ☀️"
-                in 12..16 -> "Afternoon flow 🌤"
-                in 17..20 -> "Evening energy 🌅"
-                else -> "Nighttime dreams 🌙"
-            }
-            text = "$timeGreeting • 7,542 steps • Last dream: 2 days ago"
-            textSize = 14f
-            setTextColor(0xFF666666.toInt())
-            setPadding(0, 0, 0, 16)
-        }
-
-        val dialogView = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 32, 32, 32)
-            addView(contextText)
-            addView(input)
-        }
-
-        // More dynamic greeting
-        val greetings = listOf(
-            "What's on your mind, dreamer? 🌙",
-            "Tell me what's floating through your consciousness... ✨",
-            "Share your inner world with me 💭",
-            "What dreams may come? Let's explore... 🔮",
-            "Your thoughts are safe here. What's surfacing? 🌊"
-        )
-
-        speakText(greetings.random())
-
-        AlertDialog.Builder(this)
-            .setTitle("🌌 Librium Dreamscape")
-            .setView(dialogView)
-            .setPositiveButton("Share") { _, _ ->
-                val question = input.text.toString()
-                if (question.isNotEmpty()) {
-                    processAIQuestion(question)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun processAIQuestion(question: String) {
-        val loadingDialog = AlertDialog.Builder(this)
-            .setTitle("🌌 Entering the dreamscape...")
-            .setMessage("Connecting with your subconscious...")
-            .setCancelable(false)
-            .create()
-        loadingDialog.show()
-
-        lifecycleScope.launch {
-            try {
-                val context = contextEngine.getCurrentContext()
-                val timeOfDay = context["timeOfDay"] as String
-                val hour = context["hour"] as Int
-
-                // Check if dream related
-                val isDreamRelated = question.toLowerCase().contains("dream") ||
-                        hour >= 20 || hour <= 6
-
-                val prompt = """
-                    You are Librium, a mystical dream guide and wellness companion with a deep, 
-                    intuitive understanding of the human psyche. You speak with wisdom, empathy, 
-                    and a touch of ethereal mystery.
-                    
-                    Current context:
-                    - Time: $timeOfDay 
-                    - User state: 7,542 steps, active but possibly tired
-                    - Last dream entry: 2 days ago
-                    - Mood tendency: Seeking connection
-                    
-                    User says: $question
-                    
-                    Respond in 2-3 sentences with:
-                    - Deep empathy and understanding
-                    - A unique insight or perspective
-                    - Gentle guidance or thought-provoking question
-                    - Use metaphors from nature, dreams, or consciousness
-                    - If they mention dreams, be especially mystical
-                    
-                    Be profound but accessible, like a wise friend who sees beyond the surface.
-                """.trimIndent()
-
-                val response = geminiService?.generateResponse(prompt)
-                    ?: getDreamscapeResponse(question, isDreamRelated)
-
-                runOnUiThread {
-                    loadingDialog.dismiss()
-                    showAIResponse(response)
-                }
-
-            } catch (e: Exception) {
-                runOnUiThread {
-                    loadingDialog.dismiss()
-                    val fallbackResponse = getDreamscapeResponse(question, false)
-                    showAIResponse(fallbackResponse)
-                }
-            }
-        }
-    }
-
-    private fun showAIResponse(response: String) {
-        // Speak the response
-        speakText(response)
-
-        AlertDialog.Builder(this)
-            .setTitle("🤖 Librium AI Says:")
-            .setMessage(response)
-            .setPositiveButton("Thanks!") { _, _ ->
-                speakText("You're welcome! Keep up the great work!")
-            }
-            .setNeutralButton("Ask Another") { _, _ ->
-                showAIChatDialog()
-            }
-            .show()
-    }
-
-    private fun enterDreamscape() {
-        // Create a dreamy transition dialog
-        val dreamDialog = AlertDialog.Builder(this)
-            .setTitle("🌌 Entering Dreamscape...")
-            .setMessage("Close your eyes. Take a deep breath. Let your mind wander...")
-            .setCancelable(false)
-            .create()
-
-        dreamDialog.show()
-
-        // Speak the entrance
-        speakText("Welcome to your dreamscape. Let your consciousness flow freely.")
-
-        // After 2 seconds, show the AI in dreamscape mode
-        Handler(Looper.getMainLooper()).postDelayed({
-            dreamDialog.dismiss()
-            showDreamscapeAI()
-        }, 2000)
-    }
-
-    private fun showDreamscapeAI() {
-        val dreamView = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 32, 32, 32)
-            background = GradientDrawable().apply {
-                colors = intArrayOf(0xFF1a1a2e.toInt(), 0xFF16213e.toInt(), 0xFF0f3460.toInt())
-                orientation = GradientDrawable.Orientation.TOP_BOTTOM
-            }
-        }
-
-        val promptText = TextView(this).apply {
-            text = "In this space, there are no wrong thoughts...\n\nWhat imagery is floating through your mind? 🌊"
+            text = title
             textSize = 18f
             setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+        })
+
+        cardContent.addView(header)
+        card.addView(cardContent)
+        return cardContent
+    }
+
+    private fun addNavigationDots() {
+        val dotsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
+            setPadding(0, 20, 0, 0)
         }
-        dreamView.addView(promptText)
 
-        val dreamInput = EditText(this).apply {
-            hint = "Describe what you see, feel, or imagine..."
-            setTextColor(Color.WHITE)
-            setHintTextColor(0x80FFFFFF.toInt())
-            minLines = 4
-            gravity = Gravity.TOP
-            background = GradientDrawable().apply {
-                setColor(0x20FFFFFF)
-                cornerRadius = 16f
-            }
-            setPadding(16, 16, 16, 16)
-        }
-        dreamView.addView(dreamInput)
-
-        AlertDialog.Builder(this)
-            .setTitle("🌌 Librium Dreamscape")
-            .setView(dreamView)
-            .setPositiveButton("Journey Deeper") { _, _ ->
-                val vision = dreamInput.text.toString()
-                if (vision.isNotEmpty()) {
-                    processDreamscapeVision(vision)
+        for (i in -1..1) {
+            val dot = View(this).apply {
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(if (i == currentHub) Color.parseColor("#FF5722") else Color.parseColor("#64748B"))
+                }
+                layoutParams = LinearLayout.LayoutParams(
+                    if (i == currentHub) 24 else 12,
+                    12
+                ).apply {
+                    setMargins(6, 0, 6, 0)
                 }
             }
-            .setNegativeButton("Return", null)
-            .show()
+            dotsContainer.addView(dot)
+        }
+
+        mainContainer.addView(dotsContainer)
     }
 
-    private fun processDreamscapeVision(vision: String) {
-        lifecycleScope.launch {
-            val prompt = """
-                You are a dreamscape guide, speaking from within the user's subconscious realm.
-                The user has entered a meditative state and shared this vision: "$vision"
-                
-                Respond as if you ARE part of their dreamscape:
-                - Speak in flowing, poetic language
-                - Reflect their imagery back with deeper meaning
-                - Guide them to self-discovery
-                - Use sensory details and metaphors
-                - Be mystical but grounding
-                
-                3-4 sentences that feel like they emerge from within their own mind.
-            """.trimIndent()
+    // ================ GESTURE HANDLING ================
 
-            val response = geminiService?.generateResponse(prompt)
-                ?: "I see the patterns in your vision. Like waves meeting shore, your thoughts seek form. What truth lies beneath these images? 🌊"
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
+    }
 
-            runOnUiThread {
-                speakText(response)
+    override fun onDown(e: MotionEvent): Boolean = true
+    override fun onShowPress(e: MotionEvent) {}
+    override fun onSingleTapUp(e: MotionEvent): Boolean = false
+    override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean = false
+    override fun onLongPress(e: MotionEvent) {}
 
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle("🌌 From Your Dreamscape")
-                    .setMessage(response)
-                    .setPositiveButton("Continue Journey") { _, _ ->
-                        showDreamscapeAI()
-                    }
-                    .setNeutralButton("Save Vision") { _, _ ->
-                        Toast.makeText(this@MainActivity, "Vision saved to your journal ✨", Toast.LENGTH_LONG).show()
-                    }
-                    .setNegativeButton("Surface", null)
-                    .show()
+    override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+        if (e1 == null) return false
+
+        val diffX = e2.x - e1.x
+
+        if (abs(diffX) > SWIPE_THRESHOLD && abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+            if (diffX > 0) {
+                // Swipe right - go to previous hub
+                if (currentHub > -1) {
+                    currentHub--
+                    loadCurrentHub()
+                    Toast.makeText(this, getHubName(), Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                // Swipe left - go to next hub
+                if (currentHub < 1) {
+                    currentHub++
+                    loadCurrentHub()
+                    Toast.makeText(this, getHubName(), Toast.LENGTH_SHORT).show()
+                }
             }
+            return true
+        }
+        return false
+    }
+
+    private fun getHubName(): String {
+        return when (currentHub) {
+            -1 -> "Life Balance Hub"
+            0 -> "Main Hub"
+            1 -> "Work Hub"
+            else -> "Unknown Hub"
         }
     }
 
-    private fun getDreamscapeResponse(question: String, isDreamRelated: Boolean): String {
-        return if (isDreamRelated) {
-            listOf(
-                "Dreams are windows to our deeper self. What emotions colored this dream? Let's explore the symbols together. 🌙",
-                "The dreamscape holds truths our waking mind can't grasp. Tell me more about what you saw - every detail matters. ✨",
-                "Your subconscious is speaking. I sense there's more beneath the surface. What felt most significant? 🔮"
-            ).random()
+    override fun onBackPressed() {
+        if (currentHub != 0) {
+            currentHub = 0
+            loadCurrentHub()
         } else {
-            listOf(
-                "I feel the weight of what you're carrying. Your journey of 7,542 steps today shows strength. What would lightness feel like? 🌟",
-                "Your energy speaks volumes. Sometimes our bodies know truths before our minds catch up. What is your heart telling you? 💫",
-                "There's wisdom in your question. Like ripples on water, our thoughts create patterns. What pattern are you ready to change? 🌊"
-            ).random()
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        handler.removeCallbacks(statRotationRunnable)
-        checkInHandler.removeCallbacks(checkInRunnable)
-
-        // Shutdown Text-to-Speech
-        if (::textToSpeech.isInitialized) {
-            textToSpeech.stop()
-            textToSpeech.shutdown()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            NOTIFICATION_PERMISSION_CODE -> {
-                if (grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED
-                ) {
-                    Log.d(TAG, "Notification permission granted")
-                }
-            }
+            super.onBackPressed()
         }
     }
 }

@@ -1,51 +1,77 @@
 package com.example.librium
 
-import android.os.Bundle
-import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import android.graphics.Color
 import android.graphics.Typeface
-import android.view.Gravity
 import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 
 class CommunicationActivity : AppCompatActivity() {
 
-    private lateinit var contentContainer: LinearLayout
+    private lateinit var mainContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Main layout
-        val mainLayout = LinearLayout(this).apply {
+        // Create the BEST communication interface!
+        mainContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFF0F172A.toInt())
+            setBackgroundColor(Color.parseColor("#0F172A"))
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
         }
+        setContentView(mainContainer)
 
-        // Header with back button
+        createHeader()
+        createCommunicationCards()
+    }
+
+    private fun createHeader() {
+        // Header with back button - Beautiful design!
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(24, 24, 24, 16)
+            setPadding(40, 60, 40, 40)
         }
 
         val backButton = Button(this).apply {
-            text = "← Back"
-            setOnClickListener { finish() }
-        }
-        header.addView(backButton)
-
-        val title = TextView(this).apply {
-            text = "👥 Contacts"
+            text = "←"
             textSize = 24f
             setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
-            setPadding(16, 0, 0, 0)
+            setBackgroundColor(Color.TRANSPARENT)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setOnClickListener { finish() }
         }
+
+        val title = TextView(this).apply {
+            text = "💬 Communication Hub"
+            textSize = 28f
+            setTextColor(Color.parseColor("#0EA5E9"))
+            typeface = Typeface.DEFAULT_BOLD
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                marginStart = 20
+            }
+        }
+
+        header.addView(backButton)
         header.addView(title)
+        mainContainer.addView(header)
+    }
 
-        mainLayout.addView(header)
-
-        // Content container
+    private fun createCommunicationCards() {
         val scrollView = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -53,114 +79,57 @@ class CommunicationActivity : AppCompatActivity() {
             )
         }
 
-        contentContainer = LinearLayout(this).apply {
+        val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 0, 24, 24)
+            setPadding(40, 0, 40, 40)
         }
 
-        scrollView.addView(contentContainer)
-        mainLayout.addView(scrollView)
+        // Summary stats - The numbers that matter!
+        createSummaryCard(container)
 
-        setContentView(mainLayout)
+        // Recent messages - Stay connected!
+        createRecentMessagesCard(container)
 
-        // Show contacts
-        showContacts()
+        // Important contacts - Your inner circle
+        createImportantContactsCard(container)
+
+        // Email summary - Never miss the important stuff
+        createEmailSummaryCard(container)
+
+        scrollView.addView(container)
+        mainContainer.addView(scrollView)
     }
 
-    private fun showContacts() {
-        val contacts = listOf(
-            Contact("Sarah Johnson", "sarah@example.com", "Team Lead", true),
-            Contact("Michael Chen", "michael@example.com", "Designer", true),
-            Contact("Emily Davis", "emily@example.com", "Product Manager", false),
-            Contact("John Smith", "john@example.com", "Developer", true),
-            Contact("Lisa Anderson", "lisa@example.com", "Marketing", false),
-            Contact("David Wilson", "david@example.com", "Sales", true),
-            Contact("Amanda Brown", "amanda@example.com", "HR Manager", false)
-        )
-
-        // Summary card
-        val summaryCard = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = GradientDrawable().apply {
-                orientation = GradientDrawable.Orientation.LEFT_RIGHT
-                colors = intArrayOf(0xFF9C27B0.toInt(), 0xFF3B82F6.toInt())
-                cornerRadius = 20f
-            }
-            setPadding(24, 24, 24, 24)
+    private fun createSummaryCard(container: ViewGroup) {
+        val card = CardView(this).apply {
+            radius = 25f
+            cardElevation = 8f
+            setCardBackgroundColor(Color.parseColor("#1E293B"))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 0, 0, 16)
+                bottomMargin = 30
             }
         }
 
-        val favoriteCount = contacts.count { it.isFavorite }
-        summaryCard.addView(TextView(this).apply {
-            text = "👥 ${contacts.size} contacts"
-            textSize = 20f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
-        })
-
-        summaryCard.addView(TextView(this).apply {
-            text = "⭐ $favoriteCount favorites"
-            textSize = 14f
-            setTextColor(0xFFFFFFFF.toInt())
-            setPadding(0, 4, 0, 0)
-        })
-
-        contentContainer.addView(summaryCard)
-
-        // Quick actions
-        val quickActions = LinearLayout(this).apply {
+        val content = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, 0, 0, 16)
+            gravity = Gravity.CENTER
+            setPadding(30, 30, 30, 30)
         }
 
-        quickActions.addView(createQuickActionButton("➕ Add") {
-            Toast.makeText(this, "Add contact feature coming soon!", Toast.LENGTH_SHORT).show()
-        })
+        val stats = listOf(
+            Triple("📧", "12", "Unread"),
+            Triple("💬", "5", "Messages"),
+            Triple("📞", "3", "Missed Calls"),
+            Triple("📅", "2", "Meetings")
+        )
 
-        quickActions.addView(createQuickActionButton("🔍 Search") {
-            Toast.makeText(this, "Search feature coming soon!", Toast.LENGTH_SHORT).show()
-        })
-
-        contentContainer.addView(quickActions)
-
-        // Contact list
-        contacts.forEach { contact ->
-            val contactCard = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setBackgroundColor(0xFF1E293B.toInt())
-                setPadding(20, 20, 20, 20)
-                gravity = Gravity.CENTER_VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 0, 0, 12)
-                }
-            }
-
-            // Avatar
-            val avatar = TextView(this).apply {
-                text = contact.name.split(" ").map { it.first() }.joinToString("")
-                textSize = 18f
-                setTextColor(Color.WHITE)
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(if (contact.isFavorite) 0xFFFF5722.toInt() else 0xFF9C27B0.toInt())
-                }
-                gravity = Gravity.CENTER
-                setPadding(24, 20, 24, 20)
-            }
-            contactCard.addView(avatar)
-
-            // Details
-            val detailsLayout = LinearLayout(this).apply {
+        stats.forEach { (icon, count, label) ->
+            val statBox = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(16, 0, 0, 0)
+                gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -168,61 +137,381 @@ class CommunicationActivity : AppCompatActivity() {
                 )
             }
 
-            detailsLayout.addView(TextView(this).apply {
-                text = contact.name + if (contact.isFavorite) " ⭐" else ""
+            val iconText = TextView(this).apply {
+                text = icon
+                textSize = 28f
+                gravity = Gravity.CENTER
+            }
+
+            val countText = TextView(this).apply {
+                text = count
+                textSize = 32f
+                setTextColor(Color.parseColor("#0EA5E9"))
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = Gravity.CENTER
+            }
+
+            val labelText = TextView(this).apply {
+                text = label
+                textSize = 14f
+                setTextColor(Color.parseColor("#94A3B8"))
+                gravity = Gravity.CENTER
+            }
+
+            statBox.addView(iconText)
+            statBox.addView(countText)
+            statBox.addView(labelText)
+            content.addView(statBox)
+        }
+
+        card.addView(content)
+        container.addView(card)
+    }
+
+    private fun createRecentMessagesCard(container: ViewGroup) {
+        val card = CardView(this).apply {
+            radius = 25f
+            cardElevation = 8f
+            setCardBackgroundColor(Color.parseColor("#1E293B"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 30
+            }
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(30, 30, 30, 30)
+        }
+
+        val title = TextView(this).apply {
+            text = "Recent Messages"
+            textSize = 20f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, 20)
+        }
+
+        content.addView(title)
+
+        // Sample messages - Real conversations!
+        val messages = listOf(
+            Triple("Sarah Miller", "Great presentation today! 👏", "2 min ago"),
+            Triple("Alex Chen", "Can we move the meeting to 3pm?", "15 min ago"),
+            Triple("Team Chat", "John: Who's joining lunch?", "1 hour ago"),
+            Triple("Mom", "Don't forget dinner on Sunday!", "2 hours ago")
+        )
+
+        messages.forEach { (sender, message, time) ->
+            val messageItem = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                background = GradientDrawable().apply {
+                    setColor(Color.parseColor("#334155"))
+                    cornerRadius = 20f
+                }
+                setPadding(20, 20, 20, 20)
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 15
+                }
+            }
+
+            // Avatar
+            val avatar = TextView(this).apply {
+                text = sender.split(" ").map { it.first() }.joinToString("")
                 textSize = 18f
                 setTextColor(Color.WHITE)
                 typeface = Typeface.DEFAULT_BOLD
-            })
+                background = GradientDrawable().apply {
+                    setColor(Color.parseColor("#0EA5E9"))
+                    shape = GradientDrawable.OVAL
+                }
+                gravity = Gravity.CENTER
+                width = 60
+                height = 60
+            }
 
-            detailsLayout.addView(TextView(this).apply {
-                text = contact.role
-                textSize = 14f
-                setTextColor(0xFFFF5722.toInt())
-            })
-
-            contactCard.addView(detailsLayout)
-
-            // Call button
-            val callButton = Button(this).apply {
-                text = "📞"
-                textSize = 20f
-                setBackgroundColor(Color.TRANSPARENT)
-                setOnClickListener {
-                    Toast.makeText(context, "Calling ${contact.name}...", Toast.LENGTH_SHORT).show()
+            val textContent = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    marginStart = 20
                 }
             }
-            contactCard.addView(callButton)
 
-            contactCard.setOnClickListener {
-                Toast.makeText(this, "Opening ${contact.name}'s profile", Toast.LENGTH_SHORT).show()
+            val senderText = TextView(this).apply {
+                text = sender
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                typeface = Typeface.DEFAULT_BOLD
             }
 
-            contentContainer.addView(contactCard)
+            val messageText = TextView(this).apply {
+                text = message
+                textSize = 14f
+                setTextColor(Color.parseColor("#94A3B8"))
+                setPadding(0, 2, 0, 0)
+            }
+
+            textContent.addView(senderText)
+            textContent.addView(messageText)
+
+            val timeText = TextView(this).apply {
+                text = time
+                textSize = 12f
+                setTextColor(Color.parseColor("#64748B"))
+            }
+
+            messageItem.addView(avatar)
+            messageItem.addView(textContent)
+            messageItem.addView(timeText)
+            content.addView(messageItem)
         }
+
+        card.addView(content)
+        container.addView(card)
     }
 
-    private fun createQuickActionButton(text: String, onClick: () -> Unit): Button {
-        return Button(this).apply {
-            this.text = text
-            setBackgroundColor(0xFF334155.toInt())
+    private fun createImportantContactsCard(container: ViewGroup) {
+        val card = CardView(this).apply {
+            radius = 25f
+            cardElevation = 8f
+            setCardBackgroundColor(Color.parseColor("#1E293B"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 30
+            }
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(30, 30, 30, 30)
+        }
+
+        val title = TextView(this).apply {
+            text = "Important Contacts"
+            textSize = 20f
             setTextColor(Color.WHITE)
-            setPadding(20, 12, 20, 12)
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, 0, 0, 20)
+        }
+
+        content.addView(title)
+
+        // VIP contacts grid - The people who matter!
+        val contactsGrid = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+
+        val contacts = listOf(
+            Pair("👨‍💼", "Boss"),
+            Pair("👥", "Team"),
+            Pair("🏠", "Family"),
+            Pair("⭐", "VIP")
+        )
+
+        contacts.forEach { (emoji, label) ->
+            val contactButton = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                background = GradientDrawable().apply {
+                    setColor(Color.parseColor("#334155"))
+                    cornerRadius = 20f
+                }
+                setPadding(20, 20, 20, 20)
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    setMargins(5, 0, 5, 0)
+                }
+                isClickable = true
+                setOnClickListener {
+                    Toast.makeText(context, "Opening $label contacts", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            val emojiText = TextView(this).apply {
+                text = emoji
+                textSize = 32f
+                gravity = Gravity.CENTER
+            }
+
+            val labelText = TextView(this).apply {
+                text = label
+                textSize = 14f
+                setTextColor(Color.parseColor("#94A3B8"))
+                gravity = Gravity.CENTER
+                setPadding(0, 10, 0, 0)
+            }
+
+            contactButton.addView(emojiText)
+            contactButton.addView(labelText)
+            contactsGrid.addView(contactButton)
+        }
+
+        content.addView(contactsGrid)
+        card.addView(content)
+        container.addView(card)
+    }
+
+    private fun createEmailSummaryCard(container: ViewGroup) {
+        val card = CardView(this).apply {
+            radius = 25f
+            cardElevation = 8f
+            setCardBackgroundColor(Color.parseColor("#1E293B"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 30
+            }
+        }
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(30, 30, 30, 30)
+        }
+
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val title = TextView(this).apply {
+            text = "📧 Email Summary"
+            textSize = 20f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
-            ).apply {
-                setMargins(0, 0, 8, 0)
-            }
-            setOnClickListener { onClick() }
+            )
         }
-    }
 
-    data class Contact(
-        val name: String,
-        val email: String,
-        val role: String,
-        val isFavorite: Boolean
-    )
+        val badge = TextView(this).apply {
+            text = "12 new"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#EF4444"))
+                cornerRadius = 15f
+            }
+            setPadding(20, 8, 20, 8)
+        }
+
+        header.addView(title)
+        header.addView(badge)
+        content.addView(header)
+
+        // Email categories - Smart organization!
+        val categories = listOf(
+            Triple("🔥 Urgent", "3 emails", Color.parseColor("#EF4444")),
+            Triple("💼 Work", "5 emails", Color.parseColor("#3B82F6")),
+            Triple("📊 Reports", "2 emails", Color.parseColor("#10B981")),
+            Triple("📰 Newsletters", "2 emails", Color.parseColor("#8B5CF6"))
+        )
+
+        val categoriesContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 20, 0, 0)
+        }
+
+        categories.forEach { (category, count, color) ->
+            val categoryItem = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, 10, 0, 10)
+            }
+
+            // Fixed: Added the missing dot variable
+            val dot = TextView(this).apply {
+                text = "●"
+                textSize = 16f
+                setTextColor(color)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    marginEnd = 15
+                }
+            }
+
+            val categoryText = TextView(this).apply {
+                text = category
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            }
+
+            val countText = TextView(this).apply {
+                text = count
+                textSize = 14f
+                setTextColor(Color.parseColor("#94A3B8"))
+            }
+
+            categoryItem.addView(dot)
+            categoryItem.addView(categoryText)
+            categoryItem.addView(countText)
+            categoriesContainer.addView(categoryItem)
+        }
+
+        content.addView(categoriesContainer)
+
+        // AI summary - The smartest email assistant!
+        val aiSummary = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = GradientDrawable().apply {
+                setColors(intArrayOf(Color.parseColor("#0EA5E9"), Color.parseColor("#3B82F6")))
+                orientation = GradientDrawable.Orientation.LEFT_RIGHT
+                cornerRadius = 20f
+            }
+            setPadding(25, 20, 25, 20)
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 20
+            }
+        }
+
+        val aiIcon = TextView(this).apply {
+            text = "🤖"
+            textSize = 24f
+            setPadding(0, 0, 15, 0)
+        }
+
+        val aiText = TextView(this).apply {
+            text = "AI Summary: 3 urgent emails need attention, 2 meetings confirmed"
+            textSize = 14f
+            setTextColor(Color.WHITE)
+        }
+
+        aiSummary.addView(aiIcon)
+        aiSummary.addView(aiText)
+        content.addView(aiSummary)
+
+        card.addView(content)
+        container.addView(card)
+    }
 }
+
+// The most organized communication hub - nobody communicates better! 📱💬

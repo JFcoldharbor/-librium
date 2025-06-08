@@ -1,10 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/colors.xml -->
 <resources>
-    <color name="colorPrimary">#FF5722</color>
-    <color name="colorPrimaryDark">#E64A19</color>
-    <color name="colorAccent">#FF5722</color>
-    <color name="background">#0F172A</color>
+    <!-- Primary Brand Colors -->
+    <color name="primary_orange">#FF5722</color>
+    <color name="primary_orange_dark">#E64A19</color>
+    <color name="primary_purple">#8B5CF6</color>
+    <color name="primary_blue">#0EA5E9</color>
+
+    <!-- Background Colors -->
+    <color name="background_dark">#0F172A</color>
+    <color name="card_background">#1E293B</color>
+    <color name="card_background_secondary">#334155</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#E2E8F0</color>
     <color name="text_secondary">#94A3B8</color>
-    <color name="accent">#FF5722</color>
-    <color name="white">#FFFFFF</color>
+    <color name="text_tertiary">#64748B</color>
+    <color name="text_white">#FFFFFF</color>
+
+    <!-- Status Colors -->
+    <color name="success_green">#10B981</color>
+    <color name="warning_yellow">#F59E0B</color>
+    <color name="error_red">#EF4444</color>
+
+    <!-- Gradient Colors -->
+    <color name="gradient_orange_start">#FF5722</color>
+    <color name="gradient_orange_end">#F97316</color>
+    <color name="gradient_purple_start">#8B5CF6</color>
+    <color name="gradient_purple_end">#6366F1</color>
+    <color name="gradient_blue_start">#0EA5E9</color>
+    <color name="gradient_blue_end">#3B82F6</color>
 </resources>

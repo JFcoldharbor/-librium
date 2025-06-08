@@ -1,6 +1,41 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- res/values/strings.xml -->
 <resources>
-    <string name="app_name">Librium</string>      <!-- CHANGED -->
-    <string name="default_web_client_id">YOUR_ACTUAL_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    <string name="app_name">Librium</string>
 
+    <!-- Main Hub -->
+    <string name="life_balance_hub">✨ Life Balance Hub</string>
+    <string name="work_hub">💼 Work Hub</string>
+    <string name="communication_hub">💬 Communication Hub</string>
+    <string name="swipe_hint">← Swipe to navigate →</string>
+
+    <!-- AI Assistant -->
+    <string name="ai_assistant_title">🤖 AI Wellness Assistant</string>
+    <string name="ai_thinking">AI is thinking...</string>
+    <string name="ai_error_message">I\'m here to help! What would you like to know?</string>
+
+    <!-- Wellness -->
+    <string name="wellness_dashboard">Wellness Dashboard</string>
+    <string name="steps_goal">Goal: 10,000</string>
+    <string name="calories_goal">Goal: 2,000</string>
+    <string name="water_goal">Goal: 8 glasses</string>
+    <string name="sleep_goal">Goal: 8 hours</string>
+
+    <!-- Schedule -->
+    <string name="schedule_title">📅 Today\'s Schedule</string>
+    <string name="no_events">No events scheduled</string>
+
+    <!-- Dream Journal -->
+    <string name="dream_journal_title">🌙 Dream Journal</string>
+    <string name="record_dream">Record Your Dream</string>
+    <string name="dream_saved">Dream saved successfully!</string>
+
+    <!-- Communication -->
+    <string name="unread_messages">%1$d unread</string>
+    <string name="meetings_today">%1$d meetings today</string>
+
+    <!-- Buttons -->
+    <string name="back_button">← Back</string>
+    <string name="save_button">💾 Save</string>
+    <string name="send_button">→</string>
+    <string name="close_button">✕</string>
 </resources>

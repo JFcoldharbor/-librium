@@ -1,43 +1,26 @@
 {
   "project_info": {
-    "project_number": "1074741979287",
-    "project_id": "equilibriumai-uspkn",
-    "storage_bucket": "equilibriumai-uspkn.firebasestorage.app"
+    "project_number": "649037563020",
+    "project_id": "librium-f1a78",
+    "storage_bucket": "librium-f1a78.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1074741979287:android:c24833109301ea1d7521d2",
+        "mobilesdk_app_id": "1:649037563020:android:ee2c83cd9f08bd72cee7a9",
         "android_client_info": {
-          "package_name": "com.example.equilibrium"
+          "package_name": "com.example.librium"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1074741979287-tothmnri8i6acudqhb809cfcipes39c6.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBL4QGS0MWgEhMKPI4-jFBy-5NQu796w3w"
+          "current_key": "AIzaSyDliPPUL0OdnE2rIN6ofbByGrn8h9wAXGA"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1074741979287-tothmnri8i6acudqhb809cfcipes39c6.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "1074741979287-638u1nj0qoac58rlfv04a070t2r2t8ei.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "coldharbor1.equilibrium"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

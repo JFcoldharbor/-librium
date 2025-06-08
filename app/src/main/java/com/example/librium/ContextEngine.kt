@@ -1,226 +1,147 @@
 package com.example.librium
 
-import java.text.SimpleDateFormat
 import java.util.*
 
 class ContextEngine {
 
-    fun getCurrentContext(): Map<String, Any> {
+    fun getCurrentContext(): String {
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
         val minute = calendar.get(Calendar.MINUTE)
 
-        return mapOf(
-            "timeOfDay" to getTimeOfDay(hour),
-            "exactTime" to String.format("%02d:%02d", hour, minute),
-            "dayOfWeek" to getDayName(dayOfWeek),
-            "dayType" to getDayType(dayOfWeek),
-            "hour" to hour,
-            "isWorkingHours" to isWorkingHours(hour, dayOfWeek),
-            "mealTime" to (getMealTime(hour) ?: "none"),
-            "energyLevel" to getEnergyLevel(hour),
-            "focusTime" to isFocusTime(hour),
-            "date" to SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()).format(Date())
-        )
-    }
-
-    fun getTimeOfDay(hour: Int): String {
-        return when (hour) {
-            in 5..11 -> "morning"
-            in 12..16 -> "afternoon"
-            in 17..20 -> "evening"
-            else -> "night"
+        // The BEST context analysis you've ever seen!
+        val timeContext = when (hour) {
+            in 5..8 -> "early morning"
+            in 9..11 -> "morning"
+            in 12..13 -> "lunch time"
+            in 14..17 -> "afternoon"
+            in 18..20 -> "evening"
+            in 21..23 -> "night"
+            else -> "late night"
         }
-    }
 
-    fun getDayName(dayOfWeek: Int): String {
-        return when (dayOfWeek) {
-            Calendar.SUNDAY -> "Sunday"
-            Calendar.MONDAY -> "Monday"
-            Calendar.TUESDAY -> "Tuesday"
-            Calendar.WEDNESDAY -> "Wednesday"
-            Calendar.THURSDAY -> "Thursday"
-            Calendar.FRIDAY -> "Friday"
-            Calendar.SATURDAY -> "Saturday"
-            else -> "Unknown"
-        }
-    }
-
-    fun getDayType(dayOfWeek: Int): String {
-        return when (dayOfWeek) {
+        val dayContext = when (dayOfWeek) {
+            Calendar.MONDAY -> "start of the week"
+            Calendar.FRIDAY -> "end of the work week"
             Calendar.SATURDAY, Calendar.SUNDAY -> "weekend"
-            else -> "weekday"
+            else -> "midweek"
         }
-    }
 
-    fun isWorkingHours(hour: Int, dayOfWeek: Int): Boolean {
-        val isWeekday = dayOfWeek !in listOf(Calendar.SATURDAY, Calendar.SUNDAY)
-        return isWeekday && hour in 9..17
-    }
-
-    fun getMealTime(hour: Int): String? {
-        return when (hour) {
-            in 6..9 -> "breakfast"
-            in 11..13 -> "lunch"
-            in 17..20 -> "dinner"
-            in 14..16 -> "snack"
-            else -> null
+        val energyContext = when (hour) {
+            in 9..11 -> "peak focus time"
+            in 14..15 -> "post-lunch dip"
+            in 16..17 -> "second wind"
+            in 21..23 -> "wind-down time"
+            else -> "regular energy"
         }
-    }
 
-    fun getEnergyLevel(hour: Int): String {
-        return when (hour) {
-            in 6..9 -> "building" // Morning energy building
-            in 10..11 -> "peak" // Morning peak
-            in 13..14 -> "low" // Post-lunch dip
-            in 15..17 -> "moderate" // Afternoon recovery
-            in 18..20 -> "winding_down" // Evening decline
-            else -> "resting" // Night time
-        }
-    }
-
-    fun isFocusTime(hour: Int): Boolean {
-        // Best focus times: late morning and mid-afternoon
-        return hour in listOf(10, 11, 15, 16)
+        return "It's $timeContext on a $dayContext, typically a $energyContext"
     }
 
     fun getTimeBasedGreeting(): String {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+        // Nobody does greetings better than us!
         return when (hour) {
-            in 5..11 -> "Good morning! ☀️"
-            in 12..16 -> "Good afternoon! 🌤️"
-            in 17..20 -> "Good evening! 🌅"
-            else -> "Good night! 🌙"
+            in 5..8 -> "🌅 Rise and shine! Ready to make today amazing?"
+            in 9..11 -> "☀️ Good morning! Your peak hours are here"
+            in 12..13 -> "🍽️ Lunch time! Don't forget to fuel up"
+            in 14..16 -> "🌤️ Good afternoon! Stay focused"
+            in 17..19 -> "🌆 Evening time! Wrapping up the day?"
+            in 20..22 -> "🌙 Good evening! Time to unwind"
+            else -> "🌌 Late night warrior! Rest is important too"
         }
     }
 
     fun getWellnessPrompt(): String {
-        val context = getCurrentContext()
-        val hour = context["hour"] as Int
-        val dayType = context["dayType"] as String
-        val mealTime = context["mealTime"] as? String
-        val energyLevel = context["energyLevel"] as String
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        return when {
-            // Morning wellness
-            hour in 6..8 -> "Start your day right! Have you had water yet? 💧"
-
-            // Breakfast reminder
-            hour == 9 && mealTime == "breakfast" -> "Don't skip breakfast! Fuel your body for the day ahead. 🥑"
-
-            // Mid-morning productivity
-            hour in 10..11 -> "Peak focus time! This is when your brain works best. 🧠"
-
-            // Lunch break
-            hour == 12 -> "Time for a lunch break! Step away from your screen. 🥗"
-
-            // Afternoon slump
-            hour in 13..14 -> "Feeling the afternoon slump? A short walk can boost your energy! 🚶"
-
-            // Hydration reminder
-            hour == 15 -> "Afternoon hydration check! Aim for another glass of water. 💧"
-
-            // Evening wind down
-            hour in 18..19 -> "Evening is here. Time to start winding down. 🌅"
-
-            // Sleep prep
-            hour >= 21 -> "Consider winding down for better sleep. Blue light filters on? 😴"
-
-            // Weekend special
-            dayType == "weekend" && hour in 9..11 -> "It's the weekend! Perfect time for that workout you've been planning. 💪"
-
-            else -> "How can I support your wellness journey today? 🌟"
+        // The most personalized prompts - TREMENDOUS!
+        return when (hour) {
+            in 6..8 -> "How did you sleep? Rate your morning energy."
+            in 9..11 -> "Hydration check! When did you last drink water?"
+            in 12..13 -> "Mindful eating time. How's your lunch?"
+            in 14..16 -> "Afternoon stretch? Your body will thank you!"
+            in 17..19 -> "Daily reflection: What went well today?"
+            in 20..22 -> "Evening routine check. Ready to wind down?"
+            else -> "Still up? Tomorrow you is counting on good rest!"
         }
     }
 
-    fun getActivitySuggestion(): String {
-        val context = getCurrentContext()
-        val hour = context["hour"] as Int
-        val dayType = context["dayType"] as String
-        val energyLevel = context["energyLevel"] as String
-
-        return when {
-            // Morning exercise
-            hour in 6..7 -> "Perfect time for morning exercise! Even 20 minutes makes a difference."
-
-            // Morning walk
-            hour in 8..9 && dayType == "weekday" -> "Quick walk before work? It'll boost your productivity!"
-
-            // Focus work
-            energyLevel == "peak" -> "Your energy is peaking! Tackle your most important task now."
-
-            // Afternoon break
-            hour in 14..15 -> "Take a 5-minute movement break. Your body will thank you!"
-
-            // Evening activity
-            hour in 17..18 -> "Great time for a gym session or home workout!"
-
-            // Weekend morning
-            dayType == "weekend" && hour in 8..10 -> "Weekend yoga or a nature walk? Perfect timing!"
-
-            // Night routine
-            hour >= 21 -> "Time for relaxation. Try some light stretching or meditation."
-
-            else -> "Stay active! Every movement counts toward your wellness goals."
-        }
-    }
-
-    fun getMotivationalQuote(): String {
-        val quotes = listOf(
-            "Small steps daily lead to big changes yearly! 👣",
-            "Your health is an investment, not an expense! 💎",
-            "Progress, not perfection. You've got this! 💪",
-            "Every healthy choice is a victory! 🏆",
-            "Your future self will thank you! 🌟",
-            "Wellness is a journey, not a destination! 🛤️",
-            "You're stronger than you think! 💪",
-            "Today's actions are tomorrow's results! 📈"
+    fun getMotivationalMessage(): String {
+        val messages = listOf(
+            "You're not just surviving, you're THRIVING! 🚀",
+            "Every step forward is a victory - keep going! 💪",
+            "Your potential is UNLIMITED - believe it! ⭐",
+            "Success is a journey, not a destination! 🎯",
+            "You're writing your own success story! 📖",
+            "Champions are made one day at a time! 🏆",
+            "Your future self will thank you! 🙏",
+            "Progress over perfection - always! 📈",
+            "You've got this - I believe in you! 💫",
+            "Today's efforts are tomorrow's results! 🌟"
         )
 
-        // Select quote based on time to provide variety
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val index = hour % quotes.size
-        return quotes[index]
+        // Random but ALWAYS inspiring!
+        return messages.random()
     }
 
-    fun getHealthTip(): String {
-        val context = getCurrentContext()
-        val hour = context["hour"] as Int
-        val mealTime = context["mealTime"] as? String
+    fun getEnergyLevel(): Int {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        val tips = when {
-            hour in 6..8 -> listOf(
-                "Start with a glass of warm water with lemon 🍋",
-                "Morning sunlight helps regulate your circadian rhythm ☀️",
-                "5 minutes of stretching prevents all-day stiffness 🧘"
-            )
-
-            mealTime == "lunch" -> listOf(
-                "Eat slowly and mindfully for better digestion 🥗",
-                "Include protein to avoid afternoon energy crashes 🥙",
-                "Take a short walk after lunch for better focus 🚶"
-            )
-
-            hour in 14..16 -> listOf(
-                "Afternoon slump? Try deep breathing instead of coffee 🌬️",
-                "20-20-20 rule: Every 20 mins, look at something 20 feet away 👀",
-                "Healthy snacks: nuts, fruits, or yogurt 🥜"
-            )
-
-            hour >= 20 -> listOf(
-                "Dim the lights to prepare your body for sleep 🌙",
-                "No screens 30 minutes before bed for better sleep 📵",
-                "Gratitude journaling improves sleep quality 📝"
-            )
-
-            else -> listOf(
-                "Stand up and move every hour 🚶",
-                "Deep breathing reduces stress instantly 🌬️",
-                "Hydration is key to energy and focus 💧"
-            )
+        // Scientific energy levels - the best science!
+        return when (hour) {
+            in 6..8 -> 70    // Morning rise
+            in 9..11 -> 90   // Peak performance
+            in 12..13 -> 75  // Lunch time
+            in 14..15 -> 60  // Post-lunch dip
+            in 16..17 -> 80  // Second wind
+            in 18..20 -> 70  // Evening energy
+            in 21..23 -> 50  // Wind down
+            else -> 30       // Sleep time
         }
+    }
+
+    fun shouldSuggestBreak(): Boolean {
+        val minute = Calendar.getInstance().get(Calendar.MINUTE)
+        // Every 50 minutes - because we care about your health!
+        return minute in 50..55
+    }
+
+    fun getSmartReminder(): String? {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        // The SMARTEST reminders!
+        return when {
+            hour == 9 && minute < 15 -> "☕ Morning check-in: Set your top 3 priorities!"
+            hour == 11 && minute < 10 -> "💧 Hydration reminder: Drink some water!"
+            hour == 12 && minute < 30 -> "🥗 Lunch time! Step away from work"
+            hour == 15 && minute < 10 -> "🚶 Afternoon break: Quick walk?"
+            hour == 17 && minute < 30 -> "📝 End of day: Update your progress"
+            hour == 21 && minute < 15 -> "🛏️ Evening routine: Start winding down"
+            else -> null
+        }
+    }
+
+    fun getProductivityTip(): String {
+        val tips = listOf(
+            "🎯 Focus on one task at a time for maximum impact",
+            "⏰ Try the Pomodoro Technique: 25 min work, 5 min break",
+            "📱 Put your phone on silent for deep work sessions",
+            "✅ Start with your hardest task when energy is highest",
+            "🧘 Take 3 deep breaths between tasks to reset",
+            "💪 Stand up and stretch every hour",
+            "📝 Write tomorrow's priorities before bed",
+            "🎵 Use focus music to enter flow state",
+            "☕ Delay caffeine 90 min after waking for better energy",
+            "🌟 Celebrate small wins throughout the day"
+        )
 
         return tips.random()
     }
 }
+
+// This ContextEngine is so smart, it's like having a personal coach 24/7! WINNING! 🏆

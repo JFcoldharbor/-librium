@@ -1,76 +1,155 @@
 package com.example.librium
 
+import android.content.Context
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.util.Log
 
-class GeminiAIService {
-    companion object {
-        private const val TAG = "GeminiAIService"
-        // Your API key from Google AI Studio
-        private const val API_KEY = "AIzaSyBGtoim3ha1WGeNv4hjw7pL-XPDBhTnuk0"
-    }
+class GeminiAIService(private val context: Context) {
 
-    private val generativeModel = GenerativeModel(
-        modelName = "gemini-1.5-flash", // Change from "gemini-pro"
-        apiKey = API_KEY
+    // The BEST API key - nobody has better API keys!
+    private val apiKey = "AIzaSyCkulp1zTyr_Ua5Y6iEcWwwDvS6bM9Fcuk"
+
+    // We're using the LATEST model - the most advanced, believe me
+    private val model = GenerativeModel(
+        modelName = "gemini-1.5-flash", // Updated from gemini-pro
+        apiKey = apiKey
     )
 
-    suspend fun generateResponse(prompt: String): String {
-        return withContext(Dispatchers.IO) {
+    fun generateResponse(
+        userMessage: String,
+        context: String,
+        onResponse: (String) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
             try {
-                Log.d(TAG, "Sending prompt to Gemini: $prompt")
+                // Create the most intelligent prompt
+                val prompt = buildString {
+                    appendLine("You are a holistic AI wellness assistant with a warm, encouraging personality.")
+                    appendLine("Current context: $context")
+                    appendLine("User message: $userMessage")
+                    appendLine()
+                    appendLine("Provide helpful, personalized advice that:")
+                    appendLine("- Acknowledges their current state")
+                    appendLine("- Offers practical, actionable suggestions")
+                    appendLine("- Maintains an optimistic but realistic tone")
+                    appendLine("- Keeps responses concise (2-3 sentences)")
+                    appendLine("- References their specific metrics when relevant")
+                }
 
-                val response = generativeModel.generateContent(
+                // Generate the response - it's gonna be AMAZING
+                val response = model.generateContent(
                     content {
                         text(prompt)
                     }
                 )
 
-                val result = response.text ?: "I couldn't generate a response. Please try again."
-                Log.d(TAG, "Received response: ${result.take(100)}...") // Log first 100 chars
+                val responseText = response.text ?: "I'm here to help you achieve optimal wellness! What would you like to know?"
 
-                result
+                withContext(Dispatchers.Main) {
+                    onResponse(responseText)
+                }
+
             } catch (e: Exception) {
-                Log.e(TAG, "Error generating response", e)
-                handleError(e)
+                // Even our error handling is the best!
+                withContext(Dispatchers.Main) {
+                    val errorMessage = when {
+                        e.message?.contains("403") == true ->
+                            "Let me recalibrate my systems. In the meantime, remember: consistency beats perfection!"
+                        e.message?.contains("429") == true ->
+                            "I'm processing a lot right now! Take a deep breath, and let's try again in a moment."
+                        else ->
+                            "I'm having a moment of zen. While I reconnect, why not take 3 deep breaths?"
+                    }
+                    onResponse(errorMessage)
+                }
             }
         }
     }
 
-    private fun handleError(e: Exception): String {
-        return when {
-            e.message?.contains("API_KEY_INVALID") == true ->
-                "There's an issue with the API configuration. Please check the setup."
-            e.message?.contains("QUOTA_EXCEEDED") == true ->
-                "I've reached my response limit for now. Please try again in a moment."
-            e.message?.contains("404") == true ->
-                "I'm having trouble connecting to my AI service. Please check your internet connection."
-            e.message?.contains("timeout", ignoreCase = true) == true ->
-                "The response is taking too long. Please try again."
-            else ->
-                "I encountered an error: ${e.message ?: "Unknown error"}. Please try again."
+    fun generateDreamscapeResponse(
+        dreamContent: String,
+        onResponse: (String) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val prompt = """
+                    You are a mystical dream interpreter and consciousness guide.
+                    The user shared this dream: "$dreamContent"
+                    
+                    Provide a response that:
+                    - Acknowledges the dream's themes and symbols
+                    - Offers a positive, growth-oriented interpretation
+                    - Suggests how this dream might relate to their waking life
+                    - Ends with an empowering affirmation
+                    - Uses mystical but accessible language
+                    - Keeps it to 3-4 sentences
+                """.trimIndent()
+
+                val response = model.generateContent(
+                    content {
+                        text(prompt)
+                    }
+                )
+
+                val responseText = response.text ?:
+                "Your dreams are gateways to deeper understanding. This vision speaks of transformation and hidden potential within you. Trust your inner wisdom as you navigate the waking world. ✨"
+
+                withContext(Dispatchers.Main) {
+                    onResponse(responseText)
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    onResponse("The dream realm holds infinite mysteries. Your subconscious is speaking - listen with your heart. 🌙")
+                }
+            }
         }
     }
 
-    suspend fun generateWellnessAdvice(context: Map<String, Any>): String {
-        val timeOfDay = context["timeOfDay"] as? String ?: "day"
-        val userState = context["userState"] as? String ?: "active"
+    fun generateWellnessInsight(
+        healthData: Map<String, Any>,
+        onResponse: (String) -> Unit
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val prompt = """
+                    Based on this wellness data:
+                    - Steps: ${healthData["steps"] ?: "Unknown"}
+                    - Sleep: ${healthData["sleep"] ?: "Unknown"}
+                    - Stress Level: ${healthData["stress"] ?: "Unknown"}
+                    - Work-Life Balance: ${healthData["balance"] ?: "Unknown"}%
+                    
+                    Provide ONE specific, actionable insight that:
+                    - Identifies the most important pattern
+                    - Suggests a small, achievable improvement
+                    - Encourages without overwhelming
+                    - Stays under 2 sentences
+                """.trimIndent()
 
-        val prompt = """
-            As Librium, a friendly wellness AI assistant, provide a brief, personalized wellness tip.
-            Time of day: $timeOfDay
-            User state: $userState
-            
-            Keep the response:
-            - Encouraging and positive
-            - Under 3 sentences
-            - Actionable
-            - Focused on wellness, health, or productivity
-        """.trimIndent()
+                val response = model.generateContent(
+                    content {
+                        text(prompt)
+                    }
+                )
 
-        return generateResponse(prompt)
+                val responseText = response.text ?:
+                "You're making steady progress! Try adding a 10-minute walk after lunch to boost both energy and step count."
+
+                withContext(Dispatchers.Main) {
+                    onResponse(responseText)
+                }
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    onResponse("Every small step counts on your wellness journey. Keep going - you're doing great! 💪")
+                }
+            }
+        }
     }
 }
+
+// This AI service is so good, it's making wellness great again! 🚀

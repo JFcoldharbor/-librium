@@ -1,11 +1,13 @@
 package com.example.librium
 
-import android.os.Bundle
-import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
 import android.view.Gravity
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -16,7 +18,7 @@ class ScheduleActivity : AppCompatActivity() {
 
         val mainLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xFF0F172A.toInt())
+            setBackgroundColor(Color.parseColor("#0F172A"))
             setPadding(24, 24, 24, 24)
         }
 
@@ -24,75 +26,98 @@ class ScheduleActivity : AppCompatActivity() {
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 0, 0, 24)
+            setPadding(0, 40, 0, 24)
         }
 
         val backButton = Button(this).apply {
             text = "← Back"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
             setOnClickListener { finish() }
         }
-        header.addView(backButton)
 
         val title = TextView(this).apply {
-            text = "📅 Schedule"
+            text = "📅 Today's Schedule"
             textSize = 24f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
             setPadding(16, 0, 0, 0)
         }
-        header.addView(title)
 
+        header.addView(backButton)
+        header.addView(title)
         mainLayout.addView(header)
 
-        // Today's date
-        val dateFormat = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
-        mainLayout.addView(TextView(this).apply {
-            text = dateFormat.format(Date())
-            textSize = 18f
-            setTextColor(0xFFFF5722.toInt())
-            setPadding(0, 0, 0, 16)
+        // Current time card
+        val timeCard = CardView(this).apply {
+            radius = 20f
+            setCardBackgroundColor(Color.parseColor("#1E293B"))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 20
+            }
+        }
+
+        val timeContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(20, 20, 20, 20)
+            gravity = Gravity.CENTER
+        }
+
+        val currentTime = SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date())
+        val currentDate = SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()).format(Date())
+
+        timeContent.addView(TextView(this).apply {
+            text = currentTime
+            textSize = 36f
+            setTextColor(Color.parseColor("#FF5722"))
+            typeface = Typeface.DEFAULT_BOLD
         })
 
+        timeContent.addView(TextView(this).apply {
+            text = currentDate
+            textSize = 18f
+            setTextColor(Color.parseColor("#94A3B8"))
+        })
+
+        timeCard.addView(timeContent)
+        mainLayout.addView(timeCard)
+
         // Schedule items
-        val schedule = listOf(
-            Triple("9:00 AM", "Team Standup", "Daily sync with the team"),
-            Triple("10:30 AM", "Code Review", "Review pull requests"),
-            Triple("12:00 PM", "Lunch Break", "Time to recharge"),
-            Triple("2:00 PM", "Client Meeting", "Project status update"),
-            Triple("3:30 PM", "Focus Time", "Deep work - no meetings"),
-            Triple("5:00 PM", "Wrap Up", "Review today's progress")
+        val events = listOf(
+            Triple("9:00 AM", "Morning Standup", "Team sync - 15 min"),
+            Triple("10:00 AM", "Q4 Budget Review", "Finance meeting - 1 hour"),
+            Triple("12:00 PM", "Lunch Break", "Wellness time"),
+            Triple("2:00 PM", "Client Presentation", "Project demo - 45 min"),
+            Triple("4:00 PM", "Team Sync", "Weekly review - 30 min"),
+            Triple("5:30 PM", "Wrap Up", "End of day tasks")
         )
 
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-
-        schedule.forEach { (time, title, description) ->
-            val meetingCard = LinearLayout(this).apply {
+        events.forEach { (time, title, description) ->
+            val eventCard = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                setBackgroundColor(0xFF1E293B.toInt())
+                setBackgroundColor(Color.parseColor("#1E293B"))
                 setPadding(20, 20, 20, 20)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 ).apply {
-                    setMargins(0, 0, 0, 16)
+                    bottomMargin = 12
                 }
             }
 
-            // Time column
             val timeText = TextView(this).apply {
                 text = time
-                textSize = 14f
-                setTextColor(Color.WHITE)
-                setBackgroundColor(0xFF9C27B0.toInt())
-                setPadding(16, 8, 16, 8)
-                gravity = Gravity.CENTER
+                textSize = 16f
+                setTextColor(Color.parseColor("#FF5722"))
+                typeface = Typeface.DEFAULT_BOLD
+                layoutParams = LinearLayout.LayoutParams(120, LinearLayout.LayoutParams.WRAP_CONTENT)
             }
-            meetingCard.addView(timeText)
 
-            // Details column
-            val detailsLayout = LinearLayout(this).apply {
+            val eventInfo = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(16, 0, 0, 0)
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -100,22 +125,22 @@ class ScheduleActivity : AppCompatActivity() {
                 )
             }
 
-            detailsLayout.addView(TextView(this).apply {
+            eventInfo.addView(TextView(this).apply {
                 text = title
                 textSize = 18f
                 setTextColor(Color.WHITE)
                 typeface = Typeface.DEFAULT_BOLD
             })
 
-            detailsLayout.addView(TextView(this).apply {
+            eventInfo.addView(TextView(this).apply {
                 text = description
                 textSize = 14f
-                setTextColor(0xFF94A3B8.toInt())
-                setPadding(0, 4, 0, 0)
+                setTextColor(Color.parseColor("#94A3B8"))
             })
 
-            meetingCard.addView(detailsLayout)
-            mainLayout.addView(meetingCard)
+            eventCard.addView(timeText)
+            eventCard.addView(eventInfo)
+            mainLayout.addView(eventCard)
         }
 
         val scrollView = ScrollView(this).apply {

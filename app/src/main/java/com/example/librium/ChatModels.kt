@@ -1,200 +1,186 @@
 package com.example.librium
 
-import java.util.UUID
+// The BEST data models - nobody has better data models!
 
-// Message Types
 enum class MessageType {
-    TEXT,                // Regular text message
-    WELLNESS_CARD,       // Health stats card
-    EMAIL_CARD,          // Email preview card
-    CALENDAR_CARD,       // Schedule/meeting card
-    REMINDER_CARD,       // Reminder/task card
-    SUGGESTION_CARD,     // AI suggestion card
-    ERROR_MESSAGE,       // Error display
-    LOADING             // Loading indicator
+    TEXT,
+    WELLNESS_CARD,
+    EMAIL_CARD,
+    CALENDAR_CARD,
+    DREAM_CARD,
+    NETWORK_CARD,
+    ACHIEVEMENT_CARD
 }
 
-// Main Chat Message
 data class ChatMessage(
-    val id: String = UUID.randomUUID().toString(),
     val text: String,
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
     val messageType: MessageType = MessageType.TEXT,
-    val cardData: Any? = null,
-    val isRead: Boolean = false
+    val cardData: Any? = null
 )
 
-// Wellness Card Data
 data class WellnessCardData(
     val steps: Int,
-    val stepGoal: Int = 10000,
     val calories: Int,
-    val calorieGoal: Int = 2000,
     val heartRate: Int,
-    val heartRateStatus: String = "Normal",
-    val water: Int = 0,
-    val waterGoal: Int = 8,
-    val sleepHours: Float? = null,
-    val mood: String? = null,
-    val lastUpdated: Long = System.currentTimeMillis()
-) {
-    fun getStepProgress(): Float = (steps.toFloat() / stepGoal) * 100
-    fun getCalorieProgress(): Float = (calories.toFloat() / calorieGoal) * 100
-    fun getWaterProgress(): Float = (water.toFloat() / waterGoal) * 100
-}
+    val waterIntake: Int,
+    val sleepHours: Float,
+    val stressLevel: String,
+    val mood: String,
+    val balanceScore: Int
+)
 
-// Email Card Data - COMMENTED OUT (not using email feature yet)
-// data class EmailCardData(
-//     val id: String = UUID.randomUUID().toString(),
-//     val subject: String,
-//     val sender: String,
-//     val senderEmail: String? = null,
-//     val preview: String,
-//     val timestamp: Long,
-//     val isUnread: Boolean = true,
-//     val hasAttachment: Boolean = false,
-//     val isImportant: Boolean = false,
-//     val labels: List<String> = emptyList()
-// )
-
-// Calendar Card Data
 data class CalendarCardData(
-    val id: String = UUID.randomUUID().toString(),
     val title: String,
-    val startTime: Long,
-    val endTime: Long,
-    val location: String? = null,
-    val attendees: List<String> = emptyList(),
-    val isAllDay: Boolean = false,
-    val reminderMinutes: Int = 15,
-    val meetingLink: String? = null,
-    val status: MeetingStatus = MeetingStatus.UPCOMING
+    val time: String,
+    val duration: String,
+    val attendees: List<String>,
+    val location: String,
+    val meetingLink: String?
 )
 
-enum class MeetingStatus {
-    UPCOMING,
-    IN_PROGRESS,
-    COMPLETED,
-    CANCELLED
-}
-
-// Reminder Card Data
-data class ReminderCardData(
-    val id: String = UUID.randomUUID().toString(),
-    val title: String,
-    val description: String? = null,
-    val dueTime: Long? = null,
-    val priority: Priority = Priority.MEDIUM,
-    val isCompleted: Boolean = false,
-    val category: String? = null
+data class DreamCardData(
+    val content: String,
+    val mood: String,
+    val symbols: List<String>,
+    val interpretation: String,
+    val lucidityLevel: Int
 )
 
-enum class Priority {
-    LOW,
-    MEDIUM,
-    HIGH,
-    URGENT
-}
+data class NetworkCardData(
+    val name: String,
+    val company: String,
+    val role: String,
+    val connectionTime: String,
+    val notes: String,
+    val followUpDate: String?
+)
 
-// Suggestion Card Data
-data class SuggestionCardData(
+data class AchievementCardData(
     val title: String,
     val description: String,
-    val actionText: String,
-    val actionType: SuggestionAction,
-    val iconType: String? = null,
-    val metadata: Map<String, Any> = emptyMap()
+    val progress: Int,
+    val milestone: String,
+    val celebrationType: String
 )
 
-enum class SuggestionAction {
-    OPEN_WELLNESS,
-    SCHEDULE_REMINDER,
-    START_EXERCISE,
-    CHECK_EMAILS,
-    VIEW_CALENDAR,
-    MEDITATION,
-    HYDRATION_REMINDER,
-    CUSTOM
-}
-
-// User Profile (for context)
+// User profile data - We track EVERYTHING (but privately)!
 data class UserProfile(
-    val name: String = "User",
-    val preferences: UserPreferences = UserPreferences(),
-    val goals: WellnessGoals = WellnessGoals()
+    val name: String,
+    val goals: List<Goal>,
+    val preferences: UserPreferences,
+    val healthMetrics: HealthMetrics,
+    val workMetrics: WorkMetrics
 )
+
+data class Goal(
+    val id: String,
+    val title: String,
+    val category: GoalCategory,
+    val targetValue: Float,
+    val currentValue: Float,
+    val deadline: Long,
+    val priority: Int
+)
+
+enum class GoalCategory {
+    HEALTH,
+    FITNESS,
+    CAREER,
+    PERSONAL,
+    FINANCIAL,
+    RELATIONSHIP,
+    LEARNING,
+    SPIRITUAL
+}
 
 data class UserPreferences(
-    val preferredWorkoutTime: String = "morning",
-    val notificationEnabled: Boolean = true,
-    val theme: String = "dark",
-    val language: String = "en",
-    val units: String = "metric" // or "imperial"
+    val wakeUpTime: String,
+    val sleepTime: String,
+    val workStartTime: String,
+    val workEndTime: String,
+    val preferredExerciseTime: String,
+    val notificationSettings: NotificationSettings,
+    val aiPersonality: String = "encouraging"
 )
 
-data class WellnessGoals(
-    val dailySteps: Int = 10000,
-    val dailyCalories: Int = 2000,
-    val weeklyExerciseDays: Int = 5,
-    val dailyWaterGlasses: Int = 8,
-    val sleepHours: Int = 8,
-    val focusHours: Int = 4
+data class NotificationSettings(
+    val morningCheckIn: Boolean = true,
+    val hydrationReminders: Boolean = true,
+    val movementReminders: Boolean = true,
+    val workBreakReminders: Boolean = true,
+    val eveningReflection: Boolean = true,
+    val achievementCelebrations: Boolean = true
 )
 
-// Conversation Context
-data class ConversationContext(
-    val messages: MutableList<ChatMessage> = mutableListOf(),
-    val lastTopics: MutableList<String> = mutableListOf(),
-    val userMood: String? = null,
-    val lastInteractionTime: Long = System.currentTimeMillis()
-) {
-    fun addMessage(message: ChatMessage) {
-        messages.add(message)
-        if (messages.size > 100) {
-            // Keep only last 100 messages to prevent memory issues
-            messages.removeAt(0)
-        }
-    }
+data class HealthMetrics(
+    val averageSteps: Int,
+    val averageCalories: Int,
+    val averageHeartRate: Int,
+    val averageSleepHours: Float,
+    val averageWaterIntake: Int,
+    val stressPattern: Map<String, Int>, // time of day -> stress level
+    val moodHistory: List<MoodEntry>
+)
 
-    fun getRecentMessages(count: Int = 5): List<ChatMessage> {
-        return messages.takeLast(count)
-    }
+data class MoodEntry(
+    val timestamp: Long,
+    val mood: String,
+    val energy: Int,
+    val notes: String?
+)
+
+data class WorkMetrics(
+    val averageWorkHours: Float,
+    val productivityScore: Int,
+    val focusHours: Float,
+    val meetingsPerDay: Float,
+    val emailsPerDay: Int,
+    val topPriorities: List<String>
+)
+
+// Analytics data - We measure SUCCESS!
+data class DailyAnalytics(
+    val date: Long,
+    val wellnessScore: Int,
+    val productivityScore: Int,
+    val balanceScore: Int,
+    val achievements: List<String>,
+    val insights: List<String>
+)
+
+data class WeeklyTrends(
+    val weekStartDate: Long,
+    val trends: Map<String, TrendData>,
+    val recommendations: List<String>
+)
+
+data class TrendData(
+    val metric: String,
+    val direction: TrendDirection,
+    val percentageChange: Float,
+    val insight: String
+)
+
+enum class TrendDirection {
+    UP,
+    DOWN,
+    STABLE
 }
 
-// Response Templates (for consistent formatting)
-object ResponseTemplates {
-    fun wellnessCardTemplate(data: WellnessCardData): String = """
-╔══════════════════════════════════╗
-║      💪 WELLNESS UPDATE          ║
-╠══════════════════════════════════╣
-║  👟 Steps:     ${data.steps} / ${data.stepGoal}
-║  🔥 Calories:  ${data.calories} cal
-║  ❤️ Heart Rate: ${data.heartRate} bpm
-║  💧 Water:     ${data.water} / ${data.waterGoal} glasses
-╚══════════════════════════════════╝
-    """.trimIndent()
+// Integration data - Connect with EVERYTHING!
+data class WearableData(
+    val source: String,
+    val lastSync: Long,
+    val metrics: Map<String, Any>
+)
 
-    fun emailCardTemplate(email: EmailCardData): String = """
-┌─────────────────────────────────┐
-│ ${if (email.isUnread) "● " else "  "}${email.subject}
-│ From: ${email.sender}
-│ 📎 ${if (email.hasAttachment) "Has attachment" else "No attachment"}
-│ "${email.preview.take(50)}..."
-└─────────────────────────────────┘
-    """.trimIndent()
+data class CalendarIntegration(
+    val provider: String,
+    val isConnected: Boolean,
+    val lastSync: Long,
+    val upcomingEvents: List<CalendarCardData>
+)
 
-    fun scheduleCardTemplate(event: CalendarCardData): String = """
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ 📅 ${event.title}
-┃ 🕐 ${formatTime(event.startTime)} - ${formatTime(event.endTime)}
-┃ 📍 ${event.location ?: "No location"}
-┃ 👥 ${event.attendees.size} attendees
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    """.trimIndent()
-
-    private fun formatTime(timestamp: Long): String {
-        val sdf = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
-        return sdf.format(java.util.Date(timestamp))
-    }
-}
+// The most comprehensive data models in the wellness industry! WINNING! 🏆
