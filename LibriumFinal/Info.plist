@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>LIBRIUM uses speech recognition to understand your voice commands and questions about health, productivity, and wellness. This enables natural conversations with your AI assistant to help you maintain work-life balance.
+</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LIBRIUM needs microphone access to enable voice commands with your AI wellness assistant. Speak naturally to ask about your health data, schedule meetings, get productivity tips, and manage your daily wellness routine hands-free.
+</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>LIBRIUM reads your health data from Apple Health to provide personalized wellness insights, track your progress toward health goals, and enable your AI assistant to give you intelligent recommendations about your well-being.
+</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>LIBRIUM writes wellness data and achievements to Apple Health to keep all your health information synchronized and help you track your complete wellness journey in one place.
+</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>LIBRIUM accesses your calendar to help your AI assistant prepare you for meetings, suggest optimal break times, balance your schedule for better work-life harmony, and send wellness reminders between appointments.
+</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>LIBRIUM creates and manages wellness reminders to help you maintain healthy habits, take breaks, stay hydrated, and achieve your daily health and productivity goals.
+</string>
+</dict>
+</plist>
