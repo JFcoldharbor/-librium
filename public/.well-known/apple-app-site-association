@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.coldharbor.LibriumFinal"],
+        "components": [
+          {
+            "/": "/e/*",
+            "comment": "Equilibrium event pages route into the app"
+          }
+        ]
+      }
+    ]
+  }
+}

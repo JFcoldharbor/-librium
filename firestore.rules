@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Equilibrium / Librium Firestore security rules.
+// Project: librium-f1a78
+//
+// Anyone signed in (including anonymous) can read events.
+// Only the host (matching hostUserId) can create/update/delete an event document.
+// Anyone signed in can append themselves to the attendees array (RSVP) without
+// touching other fields, since they only modify `attendees` + `updatedAt`.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /events/{eventId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.hostUserId == request.auth.uid
+        && request.resource.data.keys().hasAll(['name', 'startDate', 'endDate', 'hostUserId']);
+
+      allow update: if request.auth != null && (
+        // Host can update anything
+        resource.data.hostUserId == request.auth.uid
+        ||
+        // RSVP path: only attendees + updatedAt may change
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees', 'updatedAt'])
+      );
+
+      allow delete: if request.auth != null
+        && resource.data.hostUserId == request.auth.uid;
+    }
+  }
+}

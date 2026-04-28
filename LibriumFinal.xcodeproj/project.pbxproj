@@ -6,7 +6,23 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		67743F882F9DBC50007339B3 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F872F9DBC50007339B3 /* FirebaseAnalytics */; };
+		67743F8A2F9DBC50007339B3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F892F9DBC50007339B3 /* FirebaseAuth */; };
+		67743F8C2F9DBC50007339B3 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F8B2F9DBC50007339B3 /* FirebaseCore */; };
+		67743F8E2F9DBC50007339B3 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F8D2F9DBC50007339B3 /* FirebaseCrashlytics */; };
+		67743F902F9DBC50007339B3 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F8F2F9DBC50007339B3 /* FirebaseDatabase */; };
+		67743F922F9DBC50007339B3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F912F9DBC50007339B3 /* FirebaseFirestore */; };
+		67743F942F9DBC50007339B3 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F932F9DBC50007339B3 /* FirebaseFunctions */; };
+		67743F962F9DBC50007339B3 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F952F9DBC50007339B3 /* FirebaseRemoteConfig */; };
+		67743F982F9DBC50007339B3 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F972F9DBC50007339B3 /* FirebaseStorage */; };
+		67743FBF2F9DD005007339B3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 67743FBE2F9DD005007339B3 /* GoogleSignIn */; };
+		67743FC12F9DD005007339B3 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 67743FC02F9DD005007339B3 /* GoogleSignInSwift */; };
+		67D47EEB2F9E93F600DE8C65 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		67D829782DF673CA00A43E55 /* LibriumFinal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibriumFinal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -14,7 +30,6 @@
 		678F55332DF6ABB900FB379C /* Exceptions for "LibriumFinal" folder in "LibriumFinal" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				BrainAI/AIAssistant.swift,
 				Info.plist,
 			);
 			target = 67D829772DF673CA00A43E55 /* LibriumFinal */;
@@ -37,6 +52,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67743F902F9DBC50007339B3 /* FirebaseDatabase in Frameworks */,
+				67743F942F9DBC50007339B3 /* FirebaseFunctions in Frameworks */,
+				67743F982F9DBC50007339B3 /* FirebaseStorage in Frameworks */,
+				67743F882F9DBC50007339B3 /* FirebaseAnalytics in Frameworks */,
+				67743F8E2F9DBC50007339B3 /* FirebaseCrashlytics in Frameworks */,
+				67743FBF2F9DD005007339B3 /* GoogleSignIn in Frameworks */,
+				67743F8C2F9DBC50007339B3 /* FirebaseCore in Frameworks */,
+				67743F8A2F9DBC50007339B3 /* FirebaseAuth in Frameworks */,
+				67743F922F9DBC50007339B3 /* FirebaseFirestore in Frameworks */,
+				67743F962F9DBC50007339B3 /* FirebaseRemoteConfig in Frameworks */,
+				67743FC12F9DD005007339B3 /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,6 +74,7 @@
 			children = (
 				67D8297A2DF673CA00A43E55 /* LibriumFinal */,
 				67D829792DF673CA00A43E55 /* Products */,
+				67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -79,6 +106,17 @@
 			);
 			name = LibriumFinal;
 			packageProductDependencies = (
+				67743F872F9DBC50007339B3 /* FirebaseAnalytics */,
+				67743F892F9DBC50007339B3 /* FirebaseAuth */,
+				67743F8B2F9DBC50007339B3 /* FirebaseCore */,
+				67743F8D2F9DBC50007339B3 /* FirebaseCrashlytics */,
+				67743F8F2F9DBC50007339B3 /* FirebaseDatabase */,
+				67743F912F9DBC50007339B3 /* FirebaseFirestore */,
+				67743F932F9DBC50007339B3 /* FirebaseFunctions */,
+				67743F952F9DBC50007339B3 /* FirebaseRemoteConfig */,
+				67743F972F9DBC50007339B3 /* FirebaseStorage */,
+				67743FBE2F9DD005007339B3 /* GoogleSignIn */,
+				67743FC02F9DD005007339B3 /* GoogleSignInSwift */,
 			);
 			productName = LibriumFinal;
 			productReference = 67D829782DF673CA00A43E55 /* LibriumFinal.app */;
@@ -108,6 +146,10 @@
 			);
 			mainGroup = 67D8296F2DF673CA00A43E55;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				67743FBD2F9DD005007339B3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 67D829792DF673CA00A43E55 /* Products */;
 			projectDirPath = "";
@@ -123,6 +165,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				67D47EEB2F9E93F600DE8C65 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -266,12 +309,26 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = LibriumFinal/LibriumFinal.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ULR7W726N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LibriumFinal/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Equilibrium;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Equilibrium reads NFC tags to swap\n  contact cards.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "LIBRIUM accesses your calendar to help your AI assistant prepare you for meetings, suggest optimal break times, balance your schedule for better work-life harmony, and send wellness reminders between appointments.\n";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "LIBRUIM uses calendar to create events and schedule appointments";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Equilibrium uses the camera to scan contact QR  \n  codes.\"                           ";
+				INFOPLIST_KEY_NSContactsUsageDescription = "LIBRIUM uses contacts to text and follow up with clients  and freinds";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LIBRIUM reads your health data from Apple Health to provide personalized wellness insights, track your progress toward health goals, and enable your AI assistant to give you intelligent recommendations about your well-being.\n";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LIBRIUM writes wellness data and achievements to Apple Health to keep all your health information synchronized and help you track your complete wellness journey in one place.\n";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Librium uses location to set places of events. ";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "LIBRIUM needs microphone access to enable voice commands with your AI wellness assistant. Speak naturally to ask about your health data, schedule meetings, get productivity tips, and manage your daily wellness routine hands-free.\n";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "LIBRIUM creates and manages wellness reminders to help you maintain healthy habits, take breaks, stay hydrated, and achieve your daily health and productivity goals.\n";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "LIBRIUM uses speech recognition to understand your voice commands and questions about health, productivity, and wellness. This enables natural conversations with your AI assistant to help you maintain work-life balance.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +341,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = coldharbor.LibriumFinal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -296,12 +354,26 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = LibriumFinal/LibriumFinal.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = ULR7W726N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LibriumFinal/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Equilibrium;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
+				INFOPLIST_KEY_NFCReaderUsageDescription = "Equilibrium reads NFC tags to swap\n  contact cards.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "LIBRIUM accesses your calendar to help your AI assistant prepare you for meetings, suggest optimal break times, balance your schedule for better work-life harmony, and send wellness reminders between appointments.\n";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "LIBRUIM uses calendar to create events and schedule appointments";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Equilibrium uses the camera to scan contact QR  \n  codes.\"                           ";
+				INFOPLIST_KEY_NSContactsUsageDescription = "LIBRIUM uses contacts to text and follow up with clients  and freinds";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "LIBRIUM reads your health data from Apple Health to provide personalized wellness insights, track your progress toward health goals, and enable your AI assistant to give you intelligent recommendations about your well-being.\n";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "LIBRIUM writes wellness data and achievements to Apple Health to keep all your health information synchronized and help you track your complete wellness journey in one place.\n";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Librium uses location to set places of events. ";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "LIBRIUM needs microphone access to enable voice commands with your AI wellness assistant. Speak naturally to ask about your health data, schedule meetings, get productivity tips, and manage your daily wellness routine hands-free.\n";
+				INFOPLIST_KEY_NSRemindersUsageDescription = "LIBRIUM creates and manages wellness reminders to help you maintain healthy habits, take breaks, stay hydrated, and achieve your daily health and productivity goals.\n";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "LIBRIUM uses speech recognition to understand your voice commands and questions about health, productivity, and wellness. This enables natural conversations with your AI assistant to help you maintain work-life balance.\n";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -314,6 +386,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = coldharbor.LibriumFinal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -342,6 +415,83 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+		67743FBD2F9DD005007339B3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		67743F872F9DBC50007339B3 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		67743F892F9DBC50007339B3 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		67743F8B2F9DBC50007339B3 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		67743F8D2F9DBC50007339B3 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		67743F8F2F9DBC50007339B3 /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+		67743F912F9DBC50007339B3 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		67743F932F9DBC50007339B3 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		67743F952F9DBC50007339B3 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
+		67743F972F9DBC50007339B3 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743F862F9DBC50007339B3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		67743FBE2F9DD005007339B3 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743FBD2F9DD005007339B3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		67743FC02F9DD005007339B3 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 67743FBD2F9DD005007339B3 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 67D829702DF673CA00A43E55 /* Project object */;
 }
