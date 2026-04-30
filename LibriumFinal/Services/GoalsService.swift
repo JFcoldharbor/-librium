@@ -1,3 +1,4 @@
+import FirebaseFirestore
 import Foundation
 
 @MainActor
@@ -8,10 +9,18 @@ final class GoalsService: ObservableObject {
 
     private let store: JSONStore
     private static let storageKey = "equilibrium.work.goals"
+    private static let migrationFlagKey = "equilibrium.work.goals.firestoreMigrated"
+
+    private var listener: ListenerRegistration?
 
     init(store: JSONStore = .shared) {
         self.store = store
         load()
+        startSync()
+    }
+
+    deinit {
+        listener?.remove()
     }
 
     func load() {
@@ -25,32 +34,40 @@ final class GoalsService: ObservableObject {
             goals.append(goal)
         }
         persist()
+        Task { try? await GoalsFirestoreService.shared.upsert(goal) }
     }
 
     func delete(id: UUID) {
         goals.removeAll { $0.id == id }
         persist()
+        Task { try? await GoalsFirestoreService.shared.delete(id: id) }
     }
 
     func markCompleted(id: UUID) {
         guard let idx = goals.firstIndex(where: { $0.id == id }) else { return }
         goals[idx].status = .completed
         goals[idx].completedAt = Date()
+        let updated = goals[idx]
         persist()
+        Task { try? await GoalsFirestoreService.shared.upsert(updated) }
     }
 
     func markActive(id: UUID) {
         guard let idx = goals.firstIndex(where: { $0.id == id }) else { return }
         goals[idx].status = .active
         goals[idx].completedAt = nil
+        let updated = goals[idx]
         persist()
+        Task { try? await GoalsFirestoreService.shared.upsert(updated) }
     }
 
     func markMissed(id: UUID) {
         guard let idx = goals.firstIndex(where: { $0.id == id }) else { return }
         goals[idx].status = .missed
         goals[idx].completedAt = Date()
+        let updated = goals[idx]
         persist()
+        Task { try? await GoalsFirestoreService.shared.upsert(updated) }
     }
 
     func active(in timeframe: Goal.Timeframe) -> [Goal] {
@@ -85,8 +102,6 @@ final class GoalsService: ObservableObject {
 
     // MARK: - Accountability
 
-    /// Stats for a single timeframe. Score = completed / (completed + missed).
-    /// Dropped goals are tracked but not punished — they're a deliberate choice to abandon.
     func stats(for timeframe: Goal.Timeframe, weight: Double) -> AccountabilityScore.TimeframeStats {
         let scoped = goals.filter { $0.timeframe == timeframe }
         let completed = scoped.filter { $0.status == .completed }.count
@@ -110,8 +125,6 @@ final class GoalsService: ObservableObject {
         let quarter = stats(for: Goal.Timeframe.currentQuarter(now: now), weight: w.quarter)
         let yearly = stats(for: .yearly, weight: w.yearly)
 
-        // Composite — only timeframes with actual data contribute, and remaining
-        // weights are renormalized so an empty timeframe doesn't drag the score to zero.
         let blocks = [daily, weekly, quarter, yearly]
         let active = blocks.filter { $0.hasData }
         let totalWeight = active.reduce(0) { $0 + $1.weight }
@@ -148,5 +161,40 @@ final class GoalsService: ObservableObject {
 
     private func persist() {
         store.save(goals, key: Self.storageKey)
+    }
+
+    private func startSync() {
+        Task { [weak self] in
+            await self?.migrateLocalIfNeeded()
+            await MainActor.run { self?.attachListener() }
+        }
+    }
+
+    private func attachListener() {
+        listener?.remove()
+        listener = GoalsFirestoreService.shared.listen { [weak self] remote in
+            guard let self else { return }
+            self.goals = remote.sorted { $0.createdAt > $1.createdAt }
+            self.persist()
+        }
+    }
+
+    private func migrateLocalIfNeeded() async {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: Self.migrationFlagKey) { return }
+        let local = await MainActor.run { self.goals }
+        guard !local.isEmpty else {
+            defaults.set(true, forKey: Self.migrationFlagKey)
+            return
+        }
+        do {
+            let remote = try await GoalsFirestoreService.shared.fetchAll()
+            if remote.isEmpty {
+                for g in local {
+                    try? await GoalsFirestoreService.shared.upsert(g)
+                }
+            }
+            defaults.set(true, forKey: Self.migrationFlagKey)
+        } catch {}
     }
 }

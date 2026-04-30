@@ -1,3 +1,4 @@
+import FirebaseFirestore
 import Foundation
 
 @MainActor
@@ -8,10 +9,18 @@ final class ContactNotesService: ObservableObject {
 
     private let store: JSONStore
     private static let storageKey = "equilibrium.network.contactNotes"
+    private static let migrationFlagKey = "equilibrium.network.contactNotes.firestoreMigrated"
+
+    private var listener: ListenerRegistration?
 
     init(store: JSONStore = .shared) {
         self.store = store
         load()
+        startSync()
+    }
+
+    deinit {
+        listener?.remove()
     }
 
     func load() {
@@ -27,8 +36,6 @@ final class ContactNotesService: ObservableObject {
 
     func upsert(_ note: ContactNote) {
         var updated = note
-        // Preserve any field the caller didn't explicitly pass — tools/sheets focused on one concern
-        // shouldn't accidentally erase fields they don't care about.
         if let existing = notesByContactId[note.contactId] {
             if updated.lastTouchedAt == nil {
                 updated.lastTouchedAt = existing.lastTouchedAt
@@ -52,9 +59,10 @@ final class ContactNotesService: ObservableObject {
         updated.updatedAt = Date()
         notesByContactId[note.contactId] = updated
         persist()
+        let snapshot = updated
+        Task { try? await ContactNotesFirestoreService.shared.upsert(snapshot) }
     }
 
-    /// Explicit clear — for the rare case a future UI wants to wipe last-touch.
     func clearLastTouch(contactId: String) {
         guard var existing = notesByContactId[contactId] else { return }
         existing.lastTouchedAt = nil
@@ -62,9 +70,9 @@ final class ContactNotesService: ObservableObject {
         existing.updatedAt = Date()
         notesByContactId[contactId] = existing
         persist()
+        Task { try? await ContactNotesFirestoreService.shared.upsert(existing) }
     }
 
-    /// Explicit clear — bypasses upsert's preserve-on-nil merge.
     func clearSentiment(contactId: String) {
         guard var existing = notesByContactId[contactId] else { return }
         existing.personalScore = nil
@@ -73,11 +81,13 @@ final class ContactNotesService: ObservableObject {
         existing.updatedAt = Date()
         notesByContactId[contactId] = existing
         persist()
+        Task { try? await ContactNotesFirestoreService.shared.upsert(existing) }
     }
 
     func delete(contactId: String) {
         notesByContactId.removeValue(forKey: contactId)
         persist()
+        Task { try? await ContactNotesFirestoreService.shared.delete(contactId: contactId) }
     }
 
     func upcomingFollowUps(within days: Int = 14, now: Date = Date()) -> [ContactNote] {
@@ -93,5 +103,42 @@ final class ContactNotesService: ObservableObject {
 
     private func persist() {
         store.save(Array(notesByContactId.values), key: Self.storageKey)
+    }
+
+    private func startSync() {
+        Task { [weak self] in
+            await self?.migrateLocalIfNeeded()
+            await MainActor.run { self?.attachListener() }
+        }
+    }
+
+    private func attachListener() {
+        listener?.remove()
+        listener = ContactNotesFirestoreService.shared.listen { [weak self] remote in
+            guard let self else { return }
+            var map: [String: ContactNote] = [:]
+            for note in remote { map[note.contactId] = note }
+            self.notesByContactId = map
+            self.persist()
+        }
+    }
+
+    private func migrateLocalIfNeeded() async {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: Self.migrationFlagKey) { return }
+        let local = await MainActor.run { Array(self.notesByContactId.values) }
+        guard !local.isEmpty else {
+            defaults.set(true, forKey: Self.migrationFlagKey)
+            return
+        }
+        do {
+            let remote = try await ContactNotesFirestoreService.shared.fetchAll()
+            if remote.isEmpty {
+                for note in local {
+                    try? await ContactNotesFirestoreService.shared.upsert(note)
+                }
+            }
+            defaults.set(true, forKey: Self.migrationFlagKey)
+        } catch {}
     }
 }

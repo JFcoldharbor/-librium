@@ -44,6 +44,82 @@ enum MariaTools {
         logLifeEventTool
     ]
 
+    static let toolFamilies: [String: Set<ToolFamily>] = [
+        "log_water": [.alwaysOn],
+        "log_mood": [.alwaysOn],
+        "log_energy": [.alwaysOn],
+        "log_life_event": [.alwaysOn],
+        "save_journal": [.alwaysOn],
+        "add_memory": [.alwaysOn],
+        "forget_memory": [.alwaysOn],
+        "set_reminder": [.alwaysOn],
+        "add_important_date": [.alwaysOn],
+        "log_income": [.alwaysOn],
+        "log_expense": [.alwaysOn],
+        "mark_obligation_paid": [.alwaysOn],
+
+        "save_dream": [.dreams],
+
+        "add_pipeline_deal": [.pipeline],
+        "update_deal_stage": [.pipeline],
+        "add_income_source": [.pipeline],
+
+        "add_project": [.projects],
+
+        "add_goal": [.goals],
+        "complete_goal": [.goals],
+        "miss_goal": [.goals],
+
+        "call_contact": [.contacts],
+        "text_contact": [.contacts],
+        "set_contact_followup": [.contacts],
+        "update_contact_followup": [.contacts],
+        "add_contact_note": [.contacts],
+        "log_contact_touch": [.contacts],
+        "dismiss_contact": [.contacts],
+        "assess_relationship": [.contacts],
+
+        "add_event": [.calendar],
+        "move_event": [.calendar],
+        "cancel_event": [.calendar],
+        "batch_calendar_changes": [.calendar],
+        "events_in_window": [.calendar],
+        "set_event_priority": [.calendar],
+        "start_navigation": [.calendar],
+
+        "recall_period": [.past]
+    ]
+
+    private static let sliceFamilyMap: [SliceType: Set<ToolFamily>] = [
+        .pipeline: [.pipeline],
+        .contacts: [.contacts],
+        .fullCalendar: [.calendar],
+        .projects: [.projects],
+        .accountabilityFull: [.goals],
+        .dreams: [.dreams],
+        .pastRecall: [.past]
+    ]
+
+    static func definitions(for classification: IntentClassification) -> [[String: Any]] {
+        if classification.conversational {
+            return []
+        }
+        var families: Set<ToolFamily> = [.alwaysOn]
+        for slice in classification.slices {
+            if let mapped = sliceFamilyMap[slice] {
+                families.formUnion(mapped)
+            }
+        }
+        return definitions.filter { tool in
+            guard let function = tool["function"] as? [String: Any],
+                  let name = function["name"] as? String,
+                  let toolFams = toolFamilies[name] else {
+                return true
+            }
+            return !toolFams.isDisjoint(with: families)
+        }
+    }
+
     private static var setReminderTool: [String: Any] {
         [
             "type": "function",

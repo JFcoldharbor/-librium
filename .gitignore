@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.resolved
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+.runtimeconfig.json
+
+# CocoaPods
+Pods/
+
+# Claude Code
+.claude/
+
+# Archives
+_archive_*/
+
+# Secrets — DO NOT COMMIT
+LibriumFinal/Models/Config/Secrets.swift
+**/Secrets.swift
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+.env
+.env.*
+
+# Logs
+*.log
