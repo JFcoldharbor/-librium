@@ -139,7 +139,7 @@ final class MariaService {
             userMessage: prompt,
             recentTurns: classifierTurns,
             context: context,
-            scannerSummary: nil
+            scannerSummary: ScannerCoordinator.shared.summaryForChat
         )
         let memories = loaded.memoriesUsed
         let model = loaded.classification.conversational ? "gpt-4o-mini" : "gpt-4o"

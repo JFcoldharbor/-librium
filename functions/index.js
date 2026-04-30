@@ -1,4 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const { OpenAI } = require("openai");
@@ -8,6 +9,7 @@ admin.initializeApp();
 const openaiKey = defineSecret("OPENAI_API_KEY");
 
 const mariaChat = require("./src/mariaChat");
+const scanner = require("./src/scanner");
 
 exports.mariaChat = onRequest(
   {
@@ -18,6 +20,96 @@ exports.mariaChat = onRequest(
   },
   async (req, res) => mariaChat.handle(req, res, openaiKey.value())
 );
+
+// Manual scanner trigger — POST { userId, kind } with bearer auth.
+// Used for testing the scanner end-to-end before relying on cron, and as a
+// "rescan now" hook the iOS app can call after big data changes.
+exports.mariaScan = onRequest(
+  {
+    region: "us-central1",
+    secrets: [openaiKey],
+    memory: "512MiB",
+    timeoutSeconds: 60
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing bearer token" });
+    }
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    } catch (e) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const { userId, kind = "morningBrief", trigger = null } = req.body || {};
+    if (!userId || userId !== decoded.uid) {
+      return res.status(403).json({ error: "userId mismatch" });
+    }
+    if (!scanner.VALID_KINDS.has(kind)) {
+      return res.status(400).json({ error: `Invalid kind: ${kind}` });
+    }
+
+    try {
+      const output = await scanner.runScannerForUser({
+        uid: decoded.uid,
+        kind,
+        openaiKey: openaiKey.value(),
+        trigger
+      });
+      return res.status(200).json({ ok: true, outputId: output.id });
+    } catch (e) {
+      console.error("Scanner error:", e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
+);
+
+// Heartbeat scheduled scans. Default timezone is America/New_York for v1;
+// per-user timezone scheduling is a follow-up. Each function iterates all
+// active users (anyone with at least one Firestore document under users/)
+// and runs the scanner sequentially (sequential to avoid OpenAI rate limits).
+const scheduledScannerOptions = (schedule) => ({
+  schedule,
+  timeZone: "America/New_York",
+  secrets: [openaiKey],
+  region: "us-central1",
+  memory: "512MiB",
+  timeoutSeconds: 540
+});
+
+async function runScheduledScan(kind) {
+  const uids = await scanner.listActiveUserIds();
+  console.log(`[scanner:${kind}] running for ${uids.length} users`);
+  for (const uid of uids) {
+    try {
+      await scanner.runScannerForUser({
+        uid,
+        kind,
+        openaiKey: openaiKey.value()
+      });
+    } catch (e) {
+      console.error(`[scanner:${kind}] failed for ${uid}:`, e.message);
+    }
+  }
+}
+
+exports.scannerMorning = onSchedule(scheduledScannerOptions("30 6 * * *"), async () => {
+  await runScheduledScan("morningBrief");
+});
+exports.scannerMidday = onSchedule(scheduledScannerOptions("0 12 * * *"), async () => {
+  await runScheduledScan("middayCheck");
+});
+exports.scannerEvening = onSchedule(scheduledScannerOptions("30 17 * * *"), async () => {
+  await runScheduledScan("eveningReview");
+});
+exports.scannerNight = onSchedule(scheduledScannerOptions("30 21 * * *"), async () => {
+  await runScheduledScan("nightReflection");
+});
 
 const MODEL = "gpt-4o-mini";
 const RATE_LIMIT_PER_HOUR = 60;
