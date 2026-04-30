@@ -290,6 +290,168 @@ h1.event-name {
   transform: scale(0.99);
 }
 
+/* ============ Site nav ============ */
+
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.nav-brand {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.3px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-links a {
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--network);
+}
+
+/* ============ Landing CTA ============ */
+
+.landing-cta {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0 48px;
+}
+
+.cta-primary {
+  background: var(--network);
+  color: #000;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.4px;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.05s;
+}
+
+.cta-primary:hover {
+  opacity: 0.92;
+}
+
+.cta-primary:active {
+  transform: scale(0.99);
+}
+
+/* ============ Discover page ============ */
+
+.discover-root {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.discover-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.discover-tag {
+  color: var(--secondary);
+  margin-bottom: 32px;
+  font-size: 15px;
+}
+
+.discover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.discover-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--network-stroke);
+  border-radius: 16px;
+  padding: 18px 20px;
+  text-decoration: none;
+  color: var(--primary);
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.discover-card:hover {
+  background: var(--surface-strong);
+  border-color: var(--network);
+}
+
+.discover-card:active {
+  transform: scale(0.997);
+}
+
+.discover-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.discover-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+}
+
+.discover-host {
+  color: var(--secondary);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.discover-when {
+  color: var(--primary);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.discover-venue {
+  color: var(--secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.discover-count {
+  color: var(--network);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.discover-empty {
+  background: var(--surface);
+  border: 1px dashed var(--tertiary);
+  border-radius: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--secondary);
+}
+
 .confirmation {
   text-align: center;
   padding: 50px 20px 30px;

@@ -11,6 +11,7 @@ const openaiKey = defineSecret("OPENAI_API_KEY");
 const mariaChat = require("./src/mariaChat");
 const scanner = require("./src/scanner");
 const eventPage = require("./src/eventPage");
+const eventsDiscovery = require("./src/eventsDiscovery");
 
 exports.mariaChat = onRequest(
   {
@@ -32,6 +33,16 @@ exports.eventPage = onRequest(
     timeoutSeconds: 30
   },
   async (req, res) => eventPage.handle(req, res)
+);
+
+// Public discovery list of upcoming events at /discover. Server-rendered.
+exports.eventsDiscovery = onRequest(
+  {
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 30
+  },
+  async (req, res) => eventsDiscovery.handle(req, res)
 );
 
 // Manual scanner trigger — POST { userId, kind } with bearer auth.
