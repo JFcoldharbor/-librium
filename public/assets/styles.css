@@ -575,3 +575,124 @@ h1.event-name {
   font-size: 12px;
   margin-top: 60px;
 }
+
+/* ============ Tablet (>=720px) ============ */
+
+@media (min-width: 720px) {
+  .site-nav {
+    padding: 22px 40px;
+  }
+
+  .landing-root {
+    max-width: 820px;
+    padding: 100px 32px 80px;
+  }
+
+  .landing-pillars {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .landing-pillar {
+    padding: 22px 18px;
+  }
+
+  .landing-pillar .body {
+    font-size: 14px;
+  }
+
+  .discover-root {
+    max-width: 960px;
+    padding: 40px 32px 100px;
+  }
+
+  .discover-title {
+    font-size: 38px;
+  }
+
+  .discover-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .event-root {
+    max-width: 720px;
+    padding: 80px 32px 80px;
+  }
+}
+
+/* ============ Desktop (>=1024px) ============ */
+
+@media (min-width: 1024px) {
+  .site-nav {
+    padding: 28px 56px;
+  }
+
+  .landing-root {
+    max-width: 1080px;
+    padding: 120px 48px 80px;
+  }
+
+  .landing-tag {
+    margin-bottom: 48px;
+  }
+
+  .landing-pillars {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 80px;
+  }
+
+  .landing-pillar {
+    padding: 24px 14px;
+  }
+
+  .discover-root {
+    max-width: 1200px;
+    padding: 56px 48px 120px;
+  }
+
+  .discover-title {
+    font-size: 44px;
+  }
+
+  .discover-tag {
+    font-size: 17px;
+    margin-bottom: 40px;
+  }
+
+  .discover-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  .discover-card {
+    padding: 22px 24px;
+  }
+
+  .discover-name {
+    font-size: 22px;
+  }
+
+  .event-root {
+    max-width: 760px;
+    padding-top: 96px;
+  }
+
+  h1.event-name {
+    font-size: 52px;
+  }
+
+  .card {
+    padding: 22px 24px 24px;
+  }
+}
+
+/* ============ Wide desktop (>=1440px) ============ */
+
+@media (min-width: 1440px) {
+  .discover-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
