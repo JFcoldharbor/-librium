@@ -22,6 +22,11 @@ firebase-debug.log
 firebase-debug.*.log
 .runtimeconfig.json
 
+# Cloud Functions
+functions/node_modules/
+functions/lib/
+functions/.env
+
 # CocoaPods
 Pods/
 
