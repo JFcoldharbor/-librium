@@ -10,6 +10,7 @@ const openaiKey = defineSecret("OPENAI_API_KEY");
 
 const mariaChat = require("./src/mariaChat");
 const scanner = require("./src/scanner");
+const eventPage = require("./src/eventPage");
 
 exports.mariaChat = onRequest(
   {
@@ -19,6 +20,18 @@ exports.mariaChat = onRequest(
     timeoutSeconds: 60
   },
   async (req, res) => mariaChat.handle(req, res, openaiKey.value())
+);
+
+// Server-side rendered /e/{id} for share-link previews. Returns HTML with
+// event-specific Open Graph + Twitter card metadata. The body still loads
+// /assets/event.js so the interactive page renders identically to before.
+exports.eventPage = onRequest(
+  {
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 30
+  },
+  async (req, res) => eventPage.handle(req, res)
 );
 
 // Manual scanner trigger — POST { userId, kind } with bearer auth.

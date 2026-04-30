@@ -100,6 +100,62 @@ function escapeHtml(value) {
   }[c]));
 }
 
+function icsDate(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    date.getUTCFullYear() +
+    pad(date.getUTCMonth() + 1) +
+    pad(date.getUTCDate()) +
+    "T" +
+    pad(date.getUTCHours()) +
+    pad(date.getUTCMinutes()) +
+    pad(date.getUTCSeconds()) +
+    "Z"
+  );
+}
+
+function icsEscape(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/[,;]/g, (c) => "\\" + c);
+}
+
+function buildIcs(event) {
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Equilibrium//Event//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${event.id}@librium-f1a78.web.app`,
+    `DTSTAMP:${icsDate(new Date())}`,
+    `DTSTART:${icsDate(event.startDate)}`,
+    `DTEND:${icsDate(event.endDate)}`,
+    `SUMMARY:${icsEscape(event.name)}`
+  ];
+  if (event.venue) lines.push(`LOCATION:${icsEscape(event.venue)}`);
+  if (event.host) lines.push(`DESCRIPTION:Hosted by ${icsEscape(event.host)}`);
+  lines.push(`URL:https://librium-f1a78.web.app/e/${event.id.toLowerCase()}`);
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return lines.join("\r\n");
+}
+
+function downloadIcs(event) {
+  const ics = buildIcs(event);
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const safeName = String(event.name).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  a.download = `${safeName || "event"}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function renderError(msg) {
   root.classList.remove("loading");
   root.innerHTML = `
@@ -213,6 +269,7 @@ function renderEvent(eventId, eventData) {
             )}</div>`
           : ""
       }
+      <button type="button" class="ics-button" id="ics-btn">Add to Calendar</button>
     </div>
 
     <div class="card">
@@ -246,6 +303,11 @@ function renderEvent(eventId, eventData) {
   `;
 
   bindRSVP(eventId, event);
+
+  const icsBtn = document.getElementById("ics-btn");
+  if (icsBtn) {
+    icsBtn.addEventListener("click", () => downloadIcs(event));
+  }
 }
 
 (async () => {

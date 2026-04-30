@@ -268,6 +268,28 @@ h1.event-name {
   cursor: not-allowed;
 }
 
+.ics-button {
+  margin-top: 12px;
+  background: transparent;
+  color: var(--network);
+  border: 1px solid var(--network-stroke);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.ics-button:hover {
+  background: var(--network-soft);
+}
+
+.ics-button:active {
+  transform: scale(0.99);
+}
+
 .confirmation {
   text-align: center;
   padding: 50px 20px 30px;
