@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Equilibrium host dashboard — manage your events and see who's coming.">
+  <title>Manage · Equilibrium</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="atmosphere"></div>
+
+  <header class="site-nav">
+    <a href="/" class="nav-brand">Equilibrium</a>
+    <nav class="nav-links">
+      <a href="/companion">Companion</a>
+      <a href="/network">Network</a>
+      <a href="/discover">Discover</a>
+      <a href="/manage" class="active">Manage</a>
+    </nav>
+  </header>
+
+  <main class="manage-root" id="manage-root">
+    <div class="loader">
+      <div class="spinner"></div>
+      <p>Loading…</p>
+    </div>
+  </main>
+
+  <script type="module" src="/assets/manage.js"></script>
+</body>
+</html>
