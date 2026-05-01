@@ -112,13 +112,25 @@ function parseAttendeesTextarea(text) {
 function renderSignedOut() {
   root.innerHTML = `
     <section class="manage-hero">
-      <p class="companion-eyebrow">Equilibrium · Manage</p>
-      <h1 class="companion-title">Host dashboard.</h1>
-      <p class="companion-tag">Sign in to see your events, your attendees, and what Maria has been doing for them.</p>
+      <p class="companion-eyebrow">Equilibrium · Host dashboard</p>
+      <h1 class="companion-title">Run your events from the web.</h1>
+      <p class="companion-tag">Manage your events, see who's RSVP'd, share the link, generate a QR code for the door. Sign in with the same email you used on your phone.</p>
 
       <div class="signin-card">
-        <button class="cta-primary" id="signin-btn">Sign in with Google</button>
-        <p class="manage-fineprint">Use the email you set up the event with on your phone.</p>
+        <button class="cta-primary" id="signin-btn">
+          <svg class="google-mark" viewBox="0 0 18 18" width="16" height="16" aria-hidden="true">
+            <path fill="#fff" d="M17.64 9.2c0-.64-.06-1.25-.17-1.84H9v3.48h4.84c-.21 1.13-.84 2.08-1.79 2.72v2.26h2.9c1.7-1.56 2.69-3.87 2.69-6.62z"/>
+            <path fill="#fff" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.9-2.26c-.81.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.34A8.99 8.99 0 0 0 9 18z"/>
+            <path fill="#fff" d="M3.95 10.7a5.4 5.4 0 0 1 0-3.4V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.34z"/>
+            <path fill="#fff" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A8.97 8.97 0 0 0 9 0 8.99 8.99 0 0 0 .96 4.96L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"/>
+          </svg>
+          <span>Sign in with Google</span>
+        </button>
+        <p class="manage-fineprint">Use the same email you used to set up events on your phone — that's how the dashboard finds them.</p>
+      </div>
+
+      <div class="manage-hero-callout">
+        <p><strong>New here?</strong> The dashboard shows the events you've hosted, who's RSVP'd, and gives you a printable QR for the door. Want to know more? <a href="/host">See the host pitch →</a></p>
       </div>
     </section>
   `;
@@ -134,16 +146,15 @@ function renderSignedOut() {
   });
 }
 
-async function fetchMyEvents(uid) {
-  const q = query(collection(db, "events"), where("hostUserId", "==", uid));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+async function fetchMyEvents(user) {
+  const decode = (d) => {
     const data = d.data();
     return {
       id: d.id,
       name: data.name || "Untitled",
       venue: data.venue || null,
       host: data.host || null,
+      hostUserId: data.hostUserId || null,
       hostEmail: data.hostEmail || null,
       imageUrl: data.imageUrl || null,
       latitude: data.latitude || null,
@@ -152,7 +163,29 @@ async function fetchMyEvents(uid) {
       endDate: data.endDate?.toDate?.() ?? new Date(data.endDate),
       attendees: Array.isArray(data.attendees) ? data.attendees : [],
     };
-  }).sort((a, b) => a.startDate - b.startDate);
+  };
+
+  // Match events two ways so an iOS-created event (hostUserId from Apple/anon
+  // auth) shows up here even when the same human signs in with Google on the
+  // web. Email is the stable identifier across providers.
+  const queries = [
+    query(collection(db, "events"), where("hostUserId", "==", user.uid))
+  ];
+  if (user.email) {
+    queries.push(query(collection(db, "events"), where("hostEmail", "==", user.email)));
+  }
+
+  const snaps = await Promise.all(queries.map(getDocs));
+  const seen = new Set();
+  const events = [];
+  for (const snap of snaps) {
+    for (const d of snap.docs) {
+      if (seen.has(d.id)) continue;
+      seen.add(d.id);
+      events.push(decode(d));
+    }
+  }
+  return events.sort((a, b) => a.startDate - b.startDate);
 }
 
 function renderEventCard(e, now) {
@@ -190,7 +223,7 @@ async function renderList(user, opts = {}) {
     `;
     document.getElementById("signout-btn").addEventListener("click", () => signOut(auth));
     try {
-      cachedEvents = await fetchMyEvents(user.uid);
+      cachedEvents = await fetchMyEvents(user);
     } catch (err) {
       root.innerHTML += `<div class="error-state"><p>Couldn't load events: ${escapeHtml(err.message)}</p></div>`;
       return;
@@ -201,13 +234,19 @@ async function renderList(user, opts = {}) {
   const now = new Date();
   const upcoming = events.filter(e => e.endDate >= now);
   const past = events.filter(e => e.endDate < now);
+  const totalRsvps = events.reduce((s, e) => s + e.attendees.length, 0);
+
+  const greetingName = (user.displayName || "").split(" ")[0] || user.email || "there";
+  const empty = events.length === 0;
 
   root.innerHTML = `
     <section class="manage-header">
       <div>
         <p class="companion-eyebrow">Host dashboard</p>
-        <h1 class="manage-title">Hi, ${escapeHtml(user.displayName || user.email)}.</h1>
-        <p class="manage-subtle">${events.length} event${events.length === 1 ? "" : "s"} hosted.</p>
+        <h1 class="manage-title">Hi, ${escapeHtml(greetingName)}.</h1>
+        ${empty
+          ? `<p class="manage-subtle">No events yet. The first one is just below.</p>`
+          : `<p class="manage-subtle">${events.length} event${events.length === 1 ? "" : "s"} hosted · ${totalRsvps} total RSVP${totalRsvps === 1 ? "" : "s"}.</p>`}
       </div>
       <div class="manage-header-actions">
         <button class="cta-primary" id="host-btn">+ Host event</button>
@@ -215,25 +254,49 @@ async function renderList(user, opts = {}) {
       </div>
     </section>
 
-    <section class="manage-list">
-      ${upcoming.length ? `
-        <h2 class="manage-section-title">Upcoming</h2>
-        <div class="manage-event-grid">${upcoming.map(e => renderEventCard(e, now)).join("")}</div>
-      ` : `
-        <div class="discover-empty">
-          <p>You haven't hosted any upcoming events yet. Tap "+ Host event" to spin one up.</p>
+    ${!empty ? `
+      <section class="manage-stats">
+        <div class="manage-stat-tile">
+          <p class="manage-stat-num">${events.length}</p>
+          <p class="manage-stat-label">EVENTS HOSTED</p>
         </div>
-      `}
+        <div class="manage-stat-tile">
+          <p class="manage-stat-num">${upcoming.length}</p>
+          <p class="manage-stat-label">UPCOMING</p>
+        </div>
+        <div class="manage-stat-tile">
+          <p class="manage-stat-num">${totalRsvps}</p>
+          <p class="manage-stat-label">TOTAL RSVPS</p>
+        </div>
+      </section>
+    ` : ""}
 
-      ${past.length ? `
-        <h2 class="manage-section-title manage-section-title-muted">Past</h2>
-        <div class="manage-event-grid">${past.slice(0, 12).map(e => renderEventCard(e, now)).join("")}</div>
-      ` : ""}
+    <section class="manage-list">
+      ${empty ? `
+        <div class="manage-empty-state">
+          <div class="manage-empty-badge">⌬</div>
+          <h2 class="manage-empty-title">Host your first event</h2>
+          <p class="manage-empty-body">Spin one up and your guests get full Maria for the event window — pre-event briefings, in-event introductions, post-event follow-through. Free to them.</p>
+          <button class="cta-primary" id="empty-host-btn">+ Host event</button>
+        </div>
+      ` : `
+        ${upcoming.length ? `
+          <h2 class="manage-section-title">Upcoming</h2>
+          <div class="manage-event-grid">${upcoming.map(e => renderEventCard(e, now)).join("")}</div>
+        ` : ""}
+
+        ${past.length ? `
+          <h2 class="manage-section-title manage-section-title-muted">Past</h2>
+          <div class="manage-event-grid">${past.slice(0, 12).map(e => renderEventCard(e, now)).join("")}</div>
+        ` : ""}
+      `}
     </section>
   `;
 
   document.getElementById("signout-btn").addEventListener("click", () => signOut(auth));
   document.getElementById("host-btn").addEventListener("click", () => renderCreateForm(user));
+  const emptyHostBtn = document.getElementById("empty-host-btn");
+  if (emptyHostBtn) emptyHostBtn.addEventListener("click", () => renderCreateForm(user));
   for (const card of root.querySelectorAll(".manage-event-card")) {
     card.addEventListener("click", () => {
       const event = events.find(e => e.id === card.dataset.eventId);
