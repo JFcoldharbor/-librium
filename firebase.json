@@ -28,7 +28,8 @@
       { "source": "/e/**", "function": { "functionId": "eventPage", "region": "us-central1" } },
       { "source": "/discover", "function": { "functionId": "eventsDiscovery", "region": "us-central1" } },
       { "source": "/discover/**", "function": { "functionId": "eventsDiscovery", "region": "us-central1" } },
-      { "source": "/companion", "destination": "/companion.html" }
+      { "source": "/companion", "destination": "/companion.html" },
+      { "source": "/network", "destination": "/network.html" }
     ],
     "headers": [
       {
