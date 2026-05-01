@@ -5,6 +5,7 @@ struct CalendarSnapshot: Equatable {
     let totalMeetingMinutesToday: Int
     let busyPercent: Double
     let nextEvent: CalendarEventSummary?
+    let inProgressEvent: CalendarEventSummary?
     let firstFreeBlock: CalendarFreeBlock?
     let allEventsToday: [CalendarEventSummary]
     let asOf: Date
@@ -14,6 +15,7 @@ struct CalendarSnapshot: Equatable {
         totalMeetingMinutesToday: 0,
         busyPercent: 0,
         nextEvent: nil,
+        inProgressEvent: nil,
         firstFreeBlock: nil,
         allEventsToday: [],
         asOf: .distantPast

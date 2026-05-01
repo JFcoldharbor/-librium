@@ -50,13 +50,21 @@ final class CalendarService: ObservableObject {
             ? min(1.0, Double(totalMinutes) / Double(workdayMinutes))
             : 0
 
-        let nextEvent = events.first { $0.endDate > now && !$0.isAllDay }
+        // "Next" = truly upcoming (startDate strictly in the future).
+        // "In progress" = started but not yet ended.
+        // Splitting these so Maria doesn't say "starts soon" about an event
+        // that started 90 min ago.
+        let nextEvent = events.first { $0.startDate > now && !$0.isAllDay }
+        let inProgressEvent = events.first {
+            !$0.isAllDay && $0.startDate <= now && $0.endDate > now
+        }
 
         return CalendarSnapshot(
             totalEventsToday: events.count,
             totalMeetingMinutesToday: totalMinutes,
             busyPercent: busyPercent,
             nextEvent: nextEvent.map(Self.summarize),
+            inProgressEvent: inProgressEvent.map(Self.summarize),
             firstFreeBlock: Self.firstFreeBlock(after: now, in: timedEvents, workdayEndHour: workdayEndHour),
             allEventsToday: events.map(Self.summarize),
             asOf: now

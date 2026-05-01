@@ -16,6 +16,19 @@ enum MariaContextRenderer {
 
         let busyPct = Int((ctx.busyPercent * 100).rounded())
         parts.append("Today's calendar: \(ctx.todayMeetings) meetings, \(ctx.todayMeetingMinutes) min, \(busyPct)% booked.")
+
+        // In-progress event takes priority over next event — if something is
+        // happening RIGHT NOW, that's the more relevant signal. Maria should
+        // never see "Next event: X in 0 min" for an event that started hours
+        // ago.
+        if let inProgress = ctx.inProgressEventTitle {
+            let started = ctx.inProgressEventStartedMinutesAgo ?? 0
+            let endsIn = ctx.inProgressEventEndsInMinutes ?? 0
+            let startedLabel = started >= 60
+                ? "\(started / 60)h \(started % 60)m ago"
+                : "\(started) min ago"
+            parts.append("In progress: \"\(inProgress)\" (started \(startedLabel), ends in \(endsIn) min).")
+        }
         if let next = ctx.nextEventTitle {
             let inMin = ctx.nextEventInMinutes ?? 0
             parts.append("Next event: \"\(next)\" in \(inMin) min.")

@@ -9,6 +9,9 @@ struct BalanceContext: Codable {
     let busyPercent: Double
     let nextEventTitle: String?
     let nextEventInMinutes: Int?
+    let inProgressEventTitle: String?
+    let inProgressEventStartedMinutesAgo: Int?
+    let inProgressEventEndsInMinutes: Int?
     let staleRelationships: [StaleRelationshipSnapshot]
     let balanceScoreValue: Int
     let balanceTier: String
@@ -184,6 +187,14 @@ struct BalanceContext: Codable {
             max(0, Int($0.startDate.timeIntervalSince(now) / 60))
         }
 
+        // In-progress event timing — minutes since start, minutes until end.
+        let inProgressStartedMinutesAgo: Int? = signals.calendar.inProgressEvent.map {
+            max(0, Int(now.timeIntervalSince($0.startDate) / 60))
+        }
+        let inProgressEndsInMinutes: Int? = signals.calendar.inProgressEvent.map {
+            max(0, Int($0.endDate.timeIntervalSince(now) / 60))
+        }
+
         let notesService = ContactNotesService.shared
         let stale = signals.relationships.relationships.prefix(3).map { rel -> StaleRelationshipSnapshot in
             let cn = notesService.notesByContactId[rel.id]
@@ -344,6 +355,9 @@ struct BalanceContext: Codable {
             busyPercent: signals.calendar.busyPercent,
             nextEventTitle: signals.calendar.nextEvent?.title,
             nextEventInMinutes: nextInMinutes,
+            inProgressEventTitle: signals.calendar.inProgressEvent?.title,
+            inProgressEventStartedMinutesAgo: inProgressStartedMinutesAgo,
+            inProgressEventEndsInMinutes: inProgressEndsInMinutes,
             staleRelationships: Array(stale),
             balanceScoreValue: score.value,
             balanceTier: score.tier.rawValue,
@@ -419,6 +433,9 @@ struct BalanceContext: Codable {
             busyPercent: ctx.busyPercent,
             nextEventTitle: ctx.nextEventTitle,
             nextEventInMinutes: ctx.nextEventInMinutes,
+            inProgressEventTitle: ctx.inProgressEventTitle,
+            inProgressEventStartedMinutesAgo: ctx.inProgressEventStartedMinutesAgo,
+            inProgressEventEndsInMinutes: ctx.inProgressEventEndsInMinutes,
             staleRelationships: ctx.staleRelationships,
             balanceScoreValue: ctx.balanceScoreValue,
             balanceTier: ctx.balanceTier,
@@ -503,6 +520,9 @@ struct BalanceContext: Codable {
         busyPercent: 0,
         nextEventTitle: nil,
         nextEventInMinutes: nil,
+        inProgressEventTitle: nil,
+        inProgressEventStartedMinutesAgo: nil,
+        inProgressEventEndsInMinutes: nil,
         staleRelationships: [],
         balanceScoreValue: 0,
         balanceTier: BalanceTier.steady.rawValue,
