@@ -219,6 +219,7 @@ function renderEvent(eventId, eventData) {
     id: eventId,
     name: eventData.name || "Untitled event",
     venue: eventData.venue || null,
+    imageUrl: eventData.imageUrl || null,
     startDate: eventData.startDate?.toDate?.() ?? new Date(eventData.startDate),
     endDate: eventData.endDate?.toDate?.() ?? new Date(eventData.endDate),
     host: eventData.host || null,
@@ -249,6 +250,14 @@ function renderEvent(eventId, eventData) {
 
   root.classList.remove("loading");
   root.innerHTML = `
+    <a href="/discover" class="event-back">← All events</a>
+
+    ${
+      event.imageUrl
+        ? `<div class="event-hero"><img src="${escapeHtml(event.imageUrl)}" alt="${escapeHtml(event.name)}"></div>`
+        : `<div class="event-hero event-hero-placeholder"><span>${escapeHtml(initials(event.name))}</span></div>`
+    }
+
     <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
     <h1 class="event-name">${escapeHtml(event.name)}</h1>
     ${

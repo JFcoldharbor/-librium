@@ -38,10 +38,16 @@ function decodeEvent(id, data) {
     name: data.name || "Untitled event",
     venue: data.venue || null,
     host: data.host || null,
+    imageUrl: data.imageUrl || null,
     startDate,
     endDate,
     attendeeCount: Array.isArray(data.attendees) ? data.attendees.length : 0
   };
+}
+
+function initials(name) {
+  if (!name) return "?";
+  return String(name).trim().split(/\s+/).map(p => p[0] || "").slice(0, 2).join("").toUpperCase();
 }
 
 function toDate(v) {
@@ -87,16 +93,22 @@ function eventCard(event, now) {
   const attendees = event.attendeeCount > 0
     ? `<span class="discover-count">${event.attendeeCount} going</span>`
     : "";
+  const heroHtml = event.imageUrl
+    ? `<div class="discover-hero"><img src="${escapeHtml(event.imageUrl)}" alt="${escapeHtml(event.name)}" loading="lazy"></div>`
+    : `<div class="discover-hero discover-hero-placeholder"><span>${escapeHtml(initials(event.name))}</span></div>`;
   return `
     <a class="discover-card" href="/e/${escapeHtml(event.id.toLowerCase())}">
-      <div class="discover-row">
-        <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
-        ${attendees}
+      ${heroHtml}
+      <div class="discover-card-body">
+        <div class="discover-row">
+          <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
+          ${attendees}
+        </div>
+        <h2 class="discover-name">${escapeHtml(event.name)}</h2>
+        ${host}
+        <div class="discover-when">📅 ${escapeHtml(formatDateLine(event.startDate))}</div>
+        ${venue}
       </div>
-      <h2 class="discover-name">${escapeHtml(event.name)}</h2>
-      ${host}
-      <div class="discover-when">📅 ${escapeHtml(formatDateLine(event.startDate))}</div>
-      ${venue}
     </a>`;
 }
 

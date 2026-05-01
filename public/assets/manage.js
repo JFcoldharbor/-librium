@@ -145,6 +145,7 @@ async function fetchMyEvents(uid) {
       venue: data.venue || null,
       host: data.host || null,
       hostEmail: data.hostEmail || null,
+      imageUrl: data.imageUrl || null,
       latitude: data.latitude || null,
       longitude: data.longitude || null,
       startDate: data.startDate?.toDate?.() ?? new Date(data.startDate),
@@ -156,15 +157,21 @@ async function fetchMyEvents(uid) {
 
 function renderEventCard(e, now) {
   const status = statusFor(e.startDate, e.endDate, now);
+  const heroHtml = e.imageUrl
+    ? `<div class="manage-card-hero"><img src="${escapeAttr(e.imageUrl)}" alt="${escapeAttr(e.name)}" loading="lazy"></div>`
+    : `<div class="manage-card-hero manage-card-hero-placeholder"><span>${escapeHtml(initials(e.name))}</span></div>`;
   return `
     <button class="manage-event-card" data-event-id="${escapeAttr(e.id)}">
-      <div class="manage-event-row">
-        <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
-        <span class="manage-attendee-count">${e.attendees.length} ${e.attendees.length === 1 ? "RSVP" : "RSVPs"}</span>
+      ${heroHtml}
+      <div class="manage-card-body">
+        <div class="manage-event-row">
+          <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
+          <span class="manage-attendee-count">${e.attendees.length} ${e.attendees.length === 1 ? "RSVP" : "RSVPs"}</span>
+        </div>
+        <h3 class="manage-event-name">${escapeHtml(e.name)}</h3>
+        <p class="manage-event-when">📅 ${escapeHtml(formatDate(e.startDate))}</p>
+        ${e.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(e.venue)}</p>` : ""}
       </div>
-      <h3 class="manage-event-name">${escapeHtml(e.name)}</h3>
-      <p class="manage-event-when">📅 ${escapeHtml(formatDate(e.startDate))}</p>
-      ${e.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(e.venue)}</p>` : ""}
     </button>
   `;
 }
@@ -259,6 +266,11 @@ function eventFormHtml({ mode, event }) {
           <input type="text" name="venue" maxlength="500" value="${escapeAttr(e.venue || "")}" placeholder="Ponce City Market · Atlanta, GA">
         </label>
 
+        <label class="event-form-label">Hero image URL (optional)
+          <input type="url" name="imageUrl" maxlength="2000" value="${escapeAttr(e.imageUrl || "")}" placeholder="https://...">
+          <span class="event-form-hint">Public URL to a JPG or PNG. Shows on the event page + share previews.</span>
+        </label>
+
         <div class="event-form-row">
           <label class="event-form-label">Starts
             <input type="datetime-local" name="startDate" required value="${escapeAttr(toDatetimeLocal(start))}">
@@ -298,10 +310,11 @@ function readEventForm(form) {
   const data = new FormData(form);
   const name = String(data.get("name") || "").trim();
   const venue = String(data.get("venue") || "").trim();
+  const imageUrl = String(data.get("imageUrl") || "").trim();
   const start = new Date(String(data.get("startDate") || ""));
   const end = new Date(String(data.get("endDate") || ""));
   const attendees = parseAttendeesTextarea(String(data.get("attendees") || ""));
-  return { name, venue, start, end, attendees };
+  return { name, venue, imageUrl, start, end, attendees };
 }
 
 function showFormError(msg) {
@@ -356,6 +369,7 @@ function renderCreateForm(user) {
         updatedAt: Timestamp.now(),
       };
       if (values.venue) payload.venue = values.venue;
+      if (values.imageUrl) payload.imageUrl = values.imageUrl;
 
       await setDoc(doc(db, "events", id), payload, { merge: true });
       cachedEvents = null;
@@ -363,6 +377,7 @@ function renderCreateForm(user) {
         id,
         name: values.name,
         venue: values.venue || null,
+        imageUrl: values.imageUrl || null,
         host: user.displayName || null,
         hostEmail: user.email || null,
         startDate: values.start,
@@ -405,12 +420,16 @@ function renderEditForm(user, event) {
       if (values.venue) {
         updates.venue = values.venue;
       }
+      if (values.imageUrl) {
+        updates.imageUrl = values.imageUrl;
+      }
       await updateDoc(doc(db, "events", event.id), updates);
       cachedEvents = null;
       const updatedEvent = {
         ...event,
         name: values.name,
         venue: values.venue || event.venue,
+        imageUrl: values.imageUrl || event.imageUrl,
         startDate: values.start,
         endDate: values.end,
       };
@@ -438,10 +457,15 @@ function renderDetail(user, event) {
       `).join("")
     : `<p class="manage-empty-attendees">No RSVPs yet. Share the event link.</p>`;
 
+  const heroHtml = event.imageUrl
+    ? `<div class="manage-detail-hero"><img src="${escapeAttr(event.imageUrl)}" alt="${escapeAttr(event.name)}"></div>`
+    : `<div class="manage-detail-hero manage-card-hero-placeholder"><span>${escapeHtml(initials(event.name))}</span></div>`;
+
   root.innerHTML = `
     <button class="manage-back" id="back-btn">← All events</button>
 
     <section class="manage-event-detail">
+      ${heroHtml}
       <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
       <h1 class="manage-detail-name">${escapeHtml(event.name)}</h1>
       <p class="manage-event-when">📅 ${escapeHtml(formatDate(event.startDate))} — ${escapeHtml(formatDate(event.endDate))}</p>

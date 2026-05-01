@@ -42,6 +42,7 @@ async function handle(req, res) {
   const host = event.host ? `Hosted by ${event.host}` : "Equilibrium event";
   const startDate = toDate(event.startDate);
   const venue = event.venue || null;
+  const imageUrl = event.imageUrl || null;
   const dateLine = formatDateLine(startDate);
   const description = [host, dateLine, venue].filter(Boolean).join(" · ");
 
@@ -51,7 +52,8 @@ async function handle(req, res) {
     title: `${name} · Equilibrium`,
     description,
     ogTitle: name,
-    ogDescription: description
+    ogDescription: description,
+    ogImage: imageUrl
   }));
 }
 
@@ -80,8 +82,12 @@ function escapeAttr(value) {
   }[c]));
 }
 
-function eventHtml({ eventId, title, description, ogTitle, ogDescription }) {
+function eventHtml({ eventId, title, description, ogTitle, ogDescription, ogImage }) {
   const url = `${HOST}/e/${eventId.toLowerCase()}`;
+  const cardKind = ogImage ? "summary_large_image" : "summary";
+  const ogImageTag = ogImage
+    ? `\n  <meta property="og:image" content="${escapeAttr(ogImage)}">\n  <meta name="twitter:image" content="${escapeAttr(ogImage)}">`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,9 +101,9 @@ function eventHtml({ eventId, title, description, ogTitle, ogDescription }) {
   <meta property="og:site_name" content="Equilibrium">
   <meta property="og:url" content="${escapeAttr(url)}">
   <meta property="og:title" content="${escapeAttr(ogTitle)}">
-  <meta property="og:description" content="${escapeAttr(ogDescription)}">
+  <meta property="og:description" content="${escapeAttr(ogDescription)}">${ogImageTag}
 
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="${cardKind}">
   <meta name="twitter:title" content="${escapeAttr(ogTitle)}">
   <meta name="twitter:description" content="${escapeAttr(ogDescription)}">
 
@@ -105,6 +111,16 @@ function eventHtml({ eventId, title, description, ogTitle, ogDescription }) {
 </head>
 <body>
   <div class="atmosphere"></div>
+
+  <header class="site-nav">
+    <a href="/" class="nav-brand">Equilibrium</a>
+    <nav class="nav-links">
+      <a href="/discover">Discover</a>
+      <a href="/companion">Companion</a>
+      <a href="/network">Network</a>
+      <a href="/manage">Manage</a>
+    </nav>
+  </header>
 
   <main id="event-root" class="event-root loading">
     <div class="loader">
@@ -129,10 +145,19 @@ function notFoundHtml() {
 </head>
 <body>
   <div class="atmosphere"></div>
+  <header class="site-nav">
+    <a href="/" class="nav-brand">Equilibrium</a>
+    <nav class="nav-links">
+      <a href="/discover">Discover</a>
+      <a href="/companion">Companion</a>
+      <a href="/network">Network</a>
+      <a href="/manage">Manage</a>
+    </nav>
+  </header>
   <main class="event-root">
     <div class="error-state">
       <h1>Lost</h1>
-      <p>This page isn't here. <a href="/">Back to Equilibrium</a>.</p>
+      <p>This page isn't here. <a href="/discover">Browse upcoming events</a>.</p>
     </div>
   </main>
 </body>
