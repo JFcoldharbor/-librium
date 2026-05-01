@@ -118,6 +118,7 @@ function eventHtml({ eventId, title, description, ogTitle, ogDescription, ogImag
       <a href="/discover">Discover</a>
       <a href="/companion">Companion</a>
       <a href="/network">Network</a>
+      <a href="/host">Host</a>
       <a href="/manage">Manage</a>
     </nav>
   </header>
@@ -151,6 +152,7 @@ function notFoundHtml() {
       <a href="/discover">Discover</a>
       <a href="/companion">Companion</a>
       <a href="/network">Network</a>
+      <a href="/host">Host</a>
       <a href="/manage">Manage</a>
     </nav>
   </header>

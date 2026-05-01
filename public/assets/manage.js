@@ -461,6 +461,24 @@ function renderDetail(user, event) {
     ? `<div class="manage-detail-hero"><img src="${escapeAttr(event.imageUrl)}" alt="${escapeAttr(event.name)}"></div>`
     : `<div class="manage-detail-hero manage-card-hero-placeholder"><span>${escapeHtml(initials(event.name))}</span></div>`;
 
+  const shareUrl = `${location.origin}/e/${event.id.toLowerCase()}`;
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&color=000000&bgcolor=FFFFFF&data=${encodeURIComponent(shareUrl)}`;
+
+  // "Trial active" banner — count attendees with email (which means they
+  // can be matched to an Auth account and therefore can have an active trial).
+  // We don't query each user's profile here for performance; the banner
+  // gives the host the upper-bound estimate.
+  const eligibleCount = event.attendees.filter(a => a.email).length;
+  const trialBannerHtml = eligibleCount > 0
+    ? `<div class="manage-trial-banner">
+         <span class="manage-trial-banner-icon">⌬</span>
+         <span><span class="manage-trial-banner-num">${eligibleCount}</span> of your ${event.attendees.length} attendees have full Maria activated for the event window.</span>
+       </div>`
+    : `<div class="manage-trial-banner">
+         <span class="manage-trial-banner-icon">⌬</span>
+         <span>RSVPs with an email get full Maria during the event window.</span>
+       </div>`;
+
   root.innerHTML = `
     <button class="manage-back" id="back-btn">← All events</button>
 
@@ -471,11 +489,22 @@ function renderDetail(user, event) {
       <p class="manage-event-when">📅 ${escapeHtml(formatDate(event.startDate))} — ${escapeHtml(formatDate(event.endDate))}</p>
       ${event.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(event.venue)}</p>` : ""}
 
+      ${trialBannerHtml}
+
       <div class="manage-actions">
         <button class="cta-primary" id="edit-btn">Edit</button>
         <a class="cta-secondary" href="/e/${escapeAttr(event.id.toLowerCase())}" target="_blank">Open public page</a>
         <button class="cta-secondary" id="copy-link-btn">Copy share link</button>
         <button class="cta-secondary cta-danger" id="delete-event-btn">Cancel event</button>
+      </div>
+
+      <h2 class="manage-section-title">Share at the door</h2>
+      <div class="manage-qr-card">
+        <img class="manage-qr-img" src="${escapeAttr(qrImg)}" alt="QR code for ${escapeAttr(event.name)}">
+        <div class="manage-qr-text">
+          <strong>Scan to RSVP</strong>
+          <p>Show this on your laptop, print it, or display it on a screen at the venue. Anyone who scans lands on the public event page.</p>
+        </div>
       </div>
 
       <h2 class="manage-section-title">Attendees · ${event.attendees.length}</h2>

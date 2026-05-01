@@ -146,6 +146,7 @@ function renderHtml(events) {
       <a href="/companion">Companion</a>
       <a href="/network">Network</a>
       <a href="/discover" class="active">Discover</a>
+      <a href="/host">Host</a>
       <a href="/manage">Manage</a>
     </nav>
   </header>
