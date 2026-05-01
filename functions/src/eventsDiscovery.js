@@ -13,18 +13,23 @@ async function handle(req, res) {
   const now = new Date();
   let events = [];
   try {
+    // Simple unfiltered fetch + JS-side filter/sort. Avoids needing any
+    // composite index. Event volume is small enough that this is cheap.
     const snap = await admin.firestore()
       .collection("events")
-      .where("endDate", ">=", admin.firestore.Timestamp.fromDate(now))
-      .orderBy("endDate", "asc")
-      .limit(MAX_EVENTS)
+      .limit(200)
       .get();
-    events = snap.docs.map(d => decodeEvent(d.id, d.data())).filter(Boolean);
+    const all = snap.docs.map(d => decodeEvent(d.id, d.data())).filter(Boolean);
+    events = all
+      .filter(e => e.endDate >= now)
+      .sort((a, b) => a.startDate - b.startDate)
+      .slice(0, MAX_EVENTS);
+    console.log(`eventsDiscovery: ${all.length} total, ${events.length} upcoming`);
   } catch (e) {
-    console.warn("eventsDiscovery query failed:", e.message);
+    console.error("eventsDiscovery query failed:", e.message, e.stack);
   }
 
-  res.set("Cache-Control", "public, max-age=120, s-maxage=120");
+  res.set("Cache-Control", "public, max-age=60, s-maxage=60");
   res.status(200).type("text/html").send(renderHtml(events));
 }
 
