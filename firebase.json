@@ -18,6 +18,8 @@
   },
   "hosting": {
     "public": "public",
+    "cleanUrls": true,
+    "trailingSlash": false,
     "ignore": [
       "firebase.json",
       "**/node_modules/**"
@@ -25,7 +27,8 @@
     "rewrites": [
       { "source": "/e/**", "function": { "functionId": "eventPage", "region": "us-central1" } },
       { "source": "/discover", "function": { "functionId": "eventsDiscovery", "region": "us-central1" } },
-      { "source": "/discover/**", "function": { "functionId": "eventsDiscovery", "region": "us-central1" } }
+      { "source": "/discover/**", "function": { "functionId": "eventsDiscovery", "region": "us-central1" } },
+      { "source": "/companion", "destination": "/companion.html" }
     ],
     "headers": [
       {

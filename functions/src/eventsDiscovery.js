@@ -131,8 +131,8 @@ function renderHtml(events) {
   <header class="site-nav">
     <a href="/" class="nav-brand">Equilibrium</a>
     <nav class="nav-links">
+      <a href="/companion">Companion</a>
       <a href="/discover" class="active">Discover</a>
-      <a href="/">Home</a>
     </nav>
   </header>
 
