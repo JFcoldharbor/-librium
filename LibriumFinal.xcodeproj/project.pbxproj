@@ -18,11 +18,9 @@
 		67743F982F9DBC50007339B3 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 67743F972F9DBC50007339B3 /* FirebaseStorage */; };
 		67743FBF2F9DD005007339B3 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 67743FBE2F9DD005007339B3 /* GoogleSignIn */; };
 		67743FC12F9DD005007339B3 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 67743FC02F9DD005007339B3 /* GoogleSignInSwift */; };
-		67D47EEB2F9E93F600DE8C65 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		67D829782DF673CA00A43E55 /* LibriumFinal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibriumFinal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -74,7 +72,6 @@
 			children = (
 				67D8297A2DF673CA00A43E55 /* LibriumFinal */,
 				67D829792DF673CA00A43E55 /* Products */,
-				67D47EEA2F9E93F600DE8C65 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -165,7 +162,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				67D47EEB2F9E93F600DE8C65 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

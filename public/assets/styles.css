@@ -2064,3 +2064,108 @@ h1.event-name {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 14px;
 }
+
+.manage-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ============ Event form ============ */
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.event-form-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: var(--secondary);
+  text-transform: uppercase;
+}
+
+.event-form-label input,
+.event-form-label textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--primary);
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.event-form-label input::placeholder,
+.event-form-label textarea::placeholder {
+  color: var(--tertiary);
+}
+
+.event-form-label input:focus,
+.event-form-label textarea:focus {
+  outline: none;
+  border-color: var(--network);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.event-form-label textarea {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.5;
+}
+
+.event-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 540px) {
+  .event-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.event-form-hint {
+  font-size: 11px;
+  color: var(--tertiary);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  margin-top: 2px;
+}
+
+.event-form-hint code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--secondary);
+}
+
+.event-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.event-form-error {
+  background: rgba(226, 75, 74, 0.12);
+  border: 1px solid rgba(226, 75, 74, 0.30);
+  color: #ff8a89;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-top: 8px;
+}

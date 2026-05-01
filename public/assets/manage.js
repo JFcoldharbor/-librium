@@ -11,10 +11,9 @@ import {
   collection,
   query,
   where,
-  orderBy,
   getDocs,
   doc,
-  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   Timestamp,
@@ -37,12 +36,16 @@ const root = document.getElementById("manage-root");
 const provider = new GoogleAuthProvider();
 
 let currentUser = null;
-let currentEventId = null;
+let cachedEvents = null;
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
 }
 
 function formatDate(date) {
@@ -63,6 +66,48 @@ function statusFor(start, end, now = new Date()) {
   const days = Math.floor(hours / 24);
   return { label: `IN ${days}D`, className: "" };
 }
+
+function uuidUpper() {
+  if (crypto?.randomUUID) return crypto.randomUUID().toUpperCase();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  }).toUpperCase();
+}
+
+function initials(name) {
+  if (!name) return "?";
+  return name.trim().split(/\s+/).map((p) => p[0] || "").slice(0, 2).join("").toUpperCase();
+}
+
+// Convert Date → "YYYY-MM-DDTHH:mm" for <input type="datetime-local">
+function toDatetimeLocal(date) {
+  if (!date) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function parseAttendeesTextarea(text) {
+  if (!text) return [];
+  return text.split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(/^(.+?)\s*<([^>]+)>\s*$/);
+      const name = match ? match[1].trim() : line;
+      const email = match ? match[2].trim().toLowerCase() : null;
+      const item = {
+        id: uuidUpper(),
+        name,
+        joinedAt: Timestamp.now(),
+      };
+      if (email) item.email = email;
+      return item;
+    });
+}
+
+// ============ Views ============
 
 function renderSignedOut() {
   root.innerHTML = `
@@ -90,10 +135,7 @@ function renderSignedOut() {
 }
 
 async function fetchMyEvents(uid) {
-  const q = query(
-    collection(db, "events"),
-    where("hostUserId", "==", uid)
-  );
+  const q = query(collection(db, "events"), where("hostUserId", "==", uid));
   const snap = await getDocs(q);
   return snap.docs.map((d) => {
     const data = d.data();
@@ -102,6 +144,9 @@ async function fetchMyEvents(uid) {
       name: data.name || "Untitled",
       venue: data.venue || null,
       host: data.host || null,
+      hostEmail: data.hostEmail || null,
+      latitude: data.latitude || null,
+      longitude: data.longitude || null,
       startDate: data.startDate?.toDate?.() ?? new Date(data.startDate),
       endDate: data.endDate?.toDate?.() ?? new Date(data.endDate),
       attendees: Array.isArray(data.attendees) ? data.attendees : [],
@@ -109,94 +154,276 @@ async function fetchMyEvents(uid) {
   }).sort((a, b) => a.startDate - b.startDate);
 }
 
-function renderEventList(events) {
+function renderEventCard(e, now) {
+  const status = statusFor(e.startDate, e.endDate, now);
+  return `
+    <button class="manage-event-card" data-event-id="${escapeAttr(e.id)}">
+      <div class="manage-event-row">
+        <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
+        <span class="manage-attendee-count">${e.attendees.length} ${e.attendees.length === 1 ? "RSVP" : "RSVPs"}</span>
+      </div>
+      <h3 class="manage-event-name">${escapeHtml(e.name)}</h3>
+      <p class="manage-event-when">📅 ${escapeHtml(formatDate(e.startDate))}</p>
+      ${e.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(e.venue)}</p>` : ""}
+    </button>
+  `;
+}
+
+async function renderList(user, opts = {}) {
+  if (opts.refresh || !cachedEvents) {
+    root.innerHTML = `
+      <section class="manage-header">
+        <div>
+          <p class="companion-eyebrow">Host dashboard</p>
+          <h1 class="manage-title">Hi, ${escapeHtml(user.displayName || user.email)}.</h1>
+        </div>
+        <button class="cta-secondary" id="signout-btn">Sign out</button>
+      </section>
+      <div class="loader"><div class="spinner"></div><p>Loading your events…</p></div>
+    `;
+    document.getElementById("signout-btn").addEventListener("click", () => signOut(auth));
+    try {
+      cachedEvents = await fetchMyEvents(user.uid);
+    } catch (err) {
+      root.innerHTML += `<div class="error-state"><p>Couldn't load events: ${escapeHtml(err.message)}</p></div>`;
+      return;
+    }
+  }
+
+  const events = cachedEvents;
   const now = new Date();
   const upcoming = events.filter(e => e.endDate >= now);
   const past = events.filter(e => e.endDate < now);
 
-  const renderCard = (e) => {
-    const status = statusFor(e.startDate, e.endDate, now);
-    return `
-      <button class="manage-event-card" data-event-id="${escapeHtml(e.id)}">
-        <div class="manage-event-row">
-          <span class="status-pill ${status.className}">${escapeHtml(status.label)}</span>
-          <span class="manage-attendee-count">${e.attendees.length} ${e.attendees.length === 1 ? "RSVP" : "RSVPs"}</span>
-        </div>
-        <h3 class="manage-event-name">${escapeHtml(e.name)}</h3>
-        <p class="manage-event-when">📅 ${escapeHtml(formatDate(e.startDate))}</p>
-        ${e.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(e.venue)}</p>` : ""}
-      </button>
-    `;
-  };
-
-  return `
-    <section class="manage-list">
-      ${upcoming.length ? `
-        <h2 class="manage-section-title">Upcoming</h2>
-        <div class="manage-event-grid">${upcoming.map(renderCard).join("")}</div>
-      ` : `
-        <div class="discover-empty">
-          <p>You haven't hosted any upcoming events yet. Create one in the Equilibrium app.</p>
-        </div>
-      `}
-
-      ${past.length ? `
-        <h2 class="manage-section-title manage-section-title-muted">Past</h2>
-        <div class="manage-event-grid">${past.slice(0, 12).map(renderCard).join("")}</div>
-      ` : ""}
-    </section>
-  `;
-}
-
-async function renderSignedIn(user) {
   root.innerHTML = `
-    <section class="manage-header">
-      <div>
-        <p class="companion-eyebrow">Host dashboard</p>
-        <h1 class="manage-title">Hi, ${escapeHtml(user.displayName || user.email)}.</h1>
-      </div>
-      <button class="cta-secondary" id="signout-btn">Sign out</button>
-    </section>
-
-    <div class="loader">
-      <div class="spinner"></div>
-      <p>Loading your events…</p>
-    </div>
-  `;
-  document.getElementById("signout-btn").addEventListener("click", () => signOut(auth));
-
-  let events;
-  try {
-    events = await fetchMyEvents(user.uid);
-  } catch (err) {
-    root.innerHTML += `<div class="error-state"><p>Couldn't load events: ${escapeHtml(err.message)}</p></div>`;
-    return;
-  }
-
-  const headerHtml = `
     <section class="manage-header">
       <div>
         <p class="companion-eyebrow">Host dashboard</p>
         <h1 class="manage-title">Hi, ${escapeHtml(user.displayName || user.email)}.</h1>
         <p class="manage-subtle">${events.length} event${events.length === 1 ? "" : "s"} hosted.</p>
       </div>
-      <button class="cta-secondary" id="signout-btn">Sign out</button>
+      <div class="manage-header-actions">
+        <button class="cta-primary" id="host-btn">+ Host event</button>
+        <button class="cta-secondary" id="signout-btn">Sign out</button>
+      </div>
+    </section>
+
+    <section class="manage-list">
+      ${upcoming.length ? `
+        <h2 class="manage-section-title">Upcoming</h2>
+        <div class="manage-event-grid">${upcoming.map(e => renderEventCard(e, now)).join("")}</div>
+      ` : `
+        <div class="discover-empty">
+          <p>You haven't hosted any upcoming events yet. Tap "+ Host event" to spin one up.</p>
+        </div>
+      `}
+
+      ${past.length ? `
+        <h2 class="manage-section-title manage-section-title-muted">Past</h2>
+        <div class="manage-event-grid">${past.slice(0, 12).map(e => renderEventCard(e, now)).join("")}</div>
+      ` : ""}
     </section>
   `;
 
-  root.innerHTML = headerHtml + renderEventList(events);
   document.getElementById("signout-btn").addEventListener("click", () => signOut(auth));
-
+  document.getElementById("host-btn").addEventListener("click", () => renderCreateForm(user));
   for (const card of root.querySelectorAll(".manage-event-card")) {
-    card.addEventListener("click", () => openEventDetail(card.dataset.eventId, events, user));
+    card.addEventListener("click", () => {
+      const event = events.find(e => e.id === card.dataset.eventId);
+      if (event) renderDetail(user, event);
+    });
   }
 }
 
-async function openEventDetail(eventId, events, user) {
-  const event = events.find(e => e.id === eventId);
-  if (!event) return;
-  currentEventId = eventId;
+function eventFormHtml({ mode, event }) {
+  const e = event || {};
+  const start = e.startDate || nextRoundHour();
+  const end = e.endDate || new Date(start.getTime() + 2 * 3600000);
+  const attendeesText = (e.attendees || [])
+    .map(a => a.email ? `${a.name} <${a.email}>` : a.name)
+    .join("\n");
 
+  return `
+    <button class="manage-back" id="back-btn">← Back</button>
+
+    <section class="manage-event-detail">
+      <h1 class="manage-detail-name">${mode === "edit" ? "Edit event" : "Host an event"}</h1>
+      <p class="manage-subtle">${mode === "edit" ? "Update the details. Attendees and RSVPs stay intact." : "Spin one up. Anyone with the link can RSVP."}</p>
+
+      <form class="event-form" id="event-form">
+        <label class="event-form-label">Name
+          <input type="text" name="name" required maxlength="200" value="${escapeAttr(e.name || "")}" placeholder="Atlanta Founders Mixer">
+        </label>
+
+        <label class="event-form-label">Venue
+          <input type="text" name="venue" maxlength="500" value="${escapeAttr(e.venue || "")}" placeholder="Ponce City Market · Atlanta, GA">
+        </label>
+
+        <div class="event-form-row">
+          <label class="event-form-label">Starts
+            <input type="datetime-local" name="startDate" required value="${escapeAttr(toDatetimeLocal(start))}">
+          </label>
+
+          <label class="event-form-label">Ends
+            <input type="datetime-local" name="endDate" required value="${escapeAttr(toDatetimeLocal(end))}">
+          </label>
+        </div>
+
+        ${mode === "create" ? `
+          <label class="event-form-label">Initial attendees (optional)
+            <textarea name="attendees" rows="4" placeholder="One per line — Name &lt;email&gt;">${escapeHtml(attendeesText)}</textarea>
+            <span class="event-form-hint">Format: <code>Sarah Mitchell &lt;sarah@example.com&gt;</code></span>
+          </label>
+        ` : ""}
+
+        <div class="event-form-actions">
+          <button type="submit" class="cta-primary" id="save-btn">${mode === "edit" ? "Save changes" : "Create event"}</button>
+          <button type="button" class="cta-secondary" id="cancel-btn">Cancel</button>
+        </div>
+
+        <div class="event-form-error" id="form-error" style="display:none"></div>
+      </form>
+    </section>
+  `;
+}
+
+function nextRoundHour(now = new Date()) {
+  const d = new Date(now);
+  d.setMinutes(0, 0, 0);
+  d.setHours(d.getHours() + 1);
+  return d;
+}
+
+function readEventForm(form) {
+  const data = new FormData(form);
+  const name = String(data.get("name") || "").trim();
+  const venue = String(data.get("venue") || "").trim();
+  const start = new Date(String(data.get("startDate") || ""));
+  const end = new Date(String(data.get("endDate") || ""));
+  const attendees = parseAttendeesTextarea(String(data.get("attendees") || ""));
+  return { name, venue, start, end, attendees };
+}
+
+function showFormError(msg) {
+  const el = document.getElementById("form-error");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+function hideFormError() {
+  const el = document.getElementById("form-error");
+  if (el) el.style.display = "none";
+}
+
+function validateForm(values) {
+  if (!values.name) return "Event name is required.";
+  if (!values.start || isNaN(values.start.getTime())) return "Pick a valid start time.";
+  if (!values.end || isNaN(values.end.getTime())) return "Pick a valid end time.";
+  if (values.end <= values.start) return "End time has to be after start time.";
+  return null;
+}
+
+function renderCreateForm(user) {
+  root.innerHTML = eventFormHtml({ mode: "create", event: null });
+
+  document.getElementById("back-btn").addEventListener("click", () => renderList(user));
+  document.getElementById("cancel-btn").addEventListener("click", () => renderList(user));
+
+  document.getElementById("event-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideFormError();
+    const values = readEventForm(e.target);
+    const error = validateForm(values);
+    if (error) return showFormError(error);
+
+    const saveBtn = document.getElementById("save-btn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Creating…";
+
+    try {
+      const id = uuidUpper();
+      const payload = {
+        id,
+        name: values.name,
+        startDate: Timestamp.fromDate(values.start),
+        endDate: Timestamp.fromDate(values.end),
+        host: user.displayName || null,
+        hostEmail: user.email || null,
+        hostUserId: user.uid,
+        attendees: values.attendees,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      };
+      if (values.venue) payload.venue = values.venue;
+
+      await setDoc(doc(db, "events", id), payload, { merge: true });
+      cachedEvents = null;
+      const newEvent = {
+        id,
+        name: values.name,
+        venue: values.venue || null,
+        host: user.displayName || null,
+        hostEmail: user.email || null,
+        startDate: values.start,
+        endDate: values.end,
+        attendees: values.attendees,
+      };
+      renderDetail(user, newEvent);
+    } catch (err) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Create event";
+      showFormError(`Couldn't create: ${err.message}`);
+    }
+  });
+}
+
+function renderEditForm(user, event) {
+  root.innerHTML = eventFormHtml({ mode: "edit", event });
+
+  document.getElementById("back-btn").addEventListener("click", () => renderDetail(user, event));
+  document.getElementById("cancel-btn").addEventListener("click", () => renderDetail(user, event));
+
+  document.getElementById("event-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideFormError();
+    const values = readEventForm(e.target);
+    const error = validateForm(values);
+    if (error) return showFormError(error);
+
+    const saveBtn = document.getElementById("save-btn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+
+    try {
+      const updates = {
+        name: values.name,
+        startDate: Timestamp.fromDate(values.start),
+        endDate: Timestamp.fromDate(values.end),
+        updatedAt: Timestamp.now(),
+      };
+      if (values.venue) {
+        updates.venue = values.venue;
+      }
+      await updateDoc(doc(db, "events", event.id), updates);
+      cachedEvents = null;
+      const updatedEvent = {
+        ...event,
+        name: values.name,
+        venue: values.venue || event.venue,
+        startDate: values.start,
+        endDate: values.end,
+      };
+      renderDetail(user, updatedEvent);
+    } catch (err) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save changes";
+      showFormError(`Couldn't save: ${err.message}`);
+    }
+  });
+}
+
+function renderDetail(user, event) {
   const status = statusFor(event.startDate, event.endDate);
   const attendeesHtml = event.attendees.length
     ? event.attendees.map((a) => `
@@ -221,7 +448,8 @@ async function openEventDetail(eventId, events, user) {
       ${event.venue ? `<p class="manage-event-venue">📍 ${escapeHtml(event.venue)}</p>` : ""}
 
       <div class="manage-actions">
-        <a class="cta-secondary" href="/e/${escapeHtml(event.id.toLowerCase())}" target="_blank">Open public page</a>
+        <button class="cta-primary" id="edit-btn">Edit</button>
+        <a class="cta-secondary" href="/e/${escapeAttr(event.id.toLowerCase())}" target="_blank">Open public page</a>
         <button class="cta-secondary" id="copy-link-btn">Copy share link</button>
         <button class="cta-secondary cta-danger" id="delete-event-btn">Cancel event</button>
       </div>
@@ -231,7 +459,8 @@ async function openEventDetail(eventId, events, user) {
     </section>
   `;
 
-  document.getElementById("back-btn").addEventListener("click", () => renderSignedIn(user));
+  document.getElementById("back-btn").addEventListener("click", () => renderList(user));
+  document.getElementById("edit-btn").addEventListener("click", () => renderEditForm(user, event));
   document.getElementById("copy-link-btn").addEventListener("click", async () => {
     const url = `${location.origin}/e/${event.id.toLowerCase()}`;
     try {
@@ -245,30 +474,29 @@ async function openEventDetail(eventId, events, user) {
     if (!confirm(`Cancel "${event.name}"? This deletes the event for everyone.`)) return;
     try {
       await deleteDoc(doc(db, "events", event.id));
+      cachedEvents = null;
       alert("Event cancelled.");
-      renderSignedIn(user);
+      renderList(user, { refresh: true });
     } catch (err) {
       alert(`Couldn't cancel: ${err.message}`);
     }
   });
 }
 
-function initials(name) {
-  if (!name) return "?";
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((p) => p[0] || "")
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
+// ============ Bootstrap ============
 
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if (user) {
-    renderSignedIn(user);
+    // If URL is /create or /manage/create, jump straight to the form.
+    const path = location.pathname.replace(/\/+$/, "");
+    if (path === "/create" || path === "/manage/create") {
+      renderCreateForm(user);
+    } else {
+      renderList(user);
+    }
   } else {
+    cachedEvents = null;
     renderSignedOut();
   }
 });
