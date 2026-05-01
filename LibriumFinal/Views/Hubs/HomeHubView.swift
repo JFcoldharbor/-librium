@@ -76,7 +76,7 @@ struct HomeHubView: View {
                 .preferredColorScheme(.dark)
         }
         .sheet(item: $presentedActiveEvent) { event in
-            NetworkEventDetailSheet(event: event, mode: .detail)
+            EventModeHomeView(event: event)
                 .preferredColorScheme(.dark)
         }
     }
