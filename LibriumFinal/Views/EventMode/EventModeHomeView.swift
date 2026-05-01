@@ -21,6 +21,10 @@ struct EventModeHomeView: View {
     @State private var showStandardDetail = false
     @State private var showIntentSheet = false
     @State private var myIntent: AttendeeIntent = .default
+    @State private var roomMode: RoomMode = .remote
+    @State private var currentIndex: Int = 0
+
+    enum RoomMode { case remote, list }
 
     /// Live event from the service so attendees update in real-time during
     /// the active window without needing to dismiss + reopen.
@@ -212,6 +216,8 @@ struct EventModeHomeView: View {
                     Text("invisible")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(EquilibriumColor.tertiaryText)
+                } else if !visibleAttendees.isEmpty {
+                    modeToggle
                 }
             }
 
@@ -220,9 +226,204 @@ struct EventModeHomeView: View {
             } else if visibleAttendees.isEmpty {
                 emptyRoomState
             } else {
-                ForEach(visibleAttendees) { attendee in
-                    attendeeRow(attendee)
+                switch roomMode {
+                case .remote:
+                    remoteCardSection
+                case .list:
+                    listSection
                 }
+            }
+        }
+        .onChange(of: visibleAttendees.count) { _, newCount in
+            if currentIndex >= newCount && newCount > 0 {
+                currentIndex = 0
+            }
+        }
+    }
+
+    private var modeToggle: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                roomMode = roomMode == .remote ? .list : .remote
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: roomMode == .remote ? "list.bullet" : "person.crop.circle")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(roomMode == .remote ? "see the whole room" : "back to remote")
+                    .font(.system(size: 10, weight: .heavy))
+                    .tracking(0.5)
+                    .textCase(.uppercase)
+            }
+            .foregroundColor(accent)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(accent.opacity(0.15)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Remote (single-card) mode
+
+    private var remoteCardSection: some View {
+        let total = visibleAttendees.count
+        let safeIndex = min(currentIndex, max(0, total - 1))
+        let attendee = visibleAttendees[safeIndex]
+        return VStack(spacing: 14) {
+            remoteCard(for: attendee)
+
+            HStack {
+                Text("\(safeIndex + 1) of \(total)")
+                    .font(.system(size: 10, weight: .heavy))
+                    .tracking(1.0)
+                    .foregroundColor(EquilibriumColor.tertiaryText)
+                Spacer()
+            }
+
+            Button(action: advance) {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 16))
+                    Text(total > 1 ? "Show me someone else" : "Only one matching the room")
+                        .font(.system(size: 14, weight: .heavy))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(total > 1 ? accent : accent.opacity(0.3))
+                )
+                .foregroundColor(.black)
+            }
+            .buttonStyle(.plain)
+            .disabled(total <= 1)
+        }
+    }
+
+    private func remoteCard(for attendee: NetworkEvent.Attendee) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Identity block
+            HStack(spacing: 14) {
+                Circle()
+                    .fill(accent.opacity(0.20))
+                    .overlay(
+                        Text(initials(for: attendee.name))
+                            .font(.system(size: 22, weight: .heavy))
+                            .foregroundColor(accent)
+                    )
+                    .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(attendee.name)
+                        .font(.system(size: 22, weight: .heavy))
+                        .foregroundColor(EquilibriumColor.primaryText)
+                        .lineLimit(2)
+
+                    HStack(spacing: 6) {
+                        Text(attendee.resolvedIntent.shortLabel.uppercased())
+                            .font(.system(size: 9, weight: .heavy))
+                            .tracking(0.8)
+                            .foregroundColor(intentTint(attendee.resolvedIntent))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(intentTint(attendee.resolvedIntent).opacity(0.18)))
+
+                        if attendee.resolvedIntent.requiresMutualInterest {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(EquilibriumColor.tertiaryText)
+                        }
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.bottom, 14)
+
+            // Attribution
+            if let role = attendee.role, !role.isEmpty {
+                Label(role, systemImage: "briefcase")
+                    .font(.system(size: 13))
+                    .foregroundColor(EquilibriumColor.primaryText)
+                    .padding(.bottom, 6)
+            }
+            if let org = attendee.organization, !org.isEmpty {
+                Label(org, systemImage: "building.2")
+                    .font(.system(size: 13))
+                    .foregroundColor(EquilibriumColor.secondaryText)
+                    .padding(.bottom, 6)
+            }
+
+            // Conversation opener placeholder (Sprint 2b-3 fills this with
+            // server-side scanner-generated suggestions tied to mutuals + goals)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("CONVERSATION OPENER")
+                    .font(.system(size: 9, weight: .heavy))
+                    .tracking(1.2)
+                    .foregroundColor(accent)
+                Text(openerPlaceholder(for: attendee))
+                    .font(.system(size: 14))
+                    .foregroundColor(EquilibriumColor.primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 22)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            accent.opacity(0.10),
+                            EquilibriumColor.primaryText.opacity(0.04)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .strokeBorder(accent.opacity(0.30), lineWidth: 1)
+                )
+        )
+    }
+
+    private func openerPlaceholder(for attendee: NetworkEvent.Attendee) -> String {
+        // TODO Sprint 2b-3: replace with server-side scanner-generated opener
+        // tied to mutual connections + user's active goals + the attendee's role.
+        switch attendee.resolvedIntent {
+        case .professional:
+            if let role = attendee.role, !role.isEmpty {
+                return "Start with what they're working on. \"What's keeping you busy at \(attendee.organization ?? "work") right now?\""
+            }
+            return "Open with curiosity, not credentials. Ask what brought them here."
+        case .social:
+            return "Keep it light. \"How do you know the host?\" usually opens things up."
+        case .friends:
+            return "What do they actually like doing on weekends? That's the real signal."
+        case .romantic:
+            return "Lead with presence, not performance. Be more interested than interesting."
+        case .observing:
+            return "They're not in the discovery flow. Skip."
+        }
+    }
+
+    private func advance() {
+        let total = visibleAttendees.count
+        guard total > 1 else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            currentIndex = (currentIndex + 1) % total
+        }
+    }
+
+    // MARK: - List mode
+
+    private var listSection: some View {
+        VStack(spacing: 8) {
+            ForEach(visibleAttendees) { attendee in
+                attendeeRow(attendee)
             }
         }
     }
