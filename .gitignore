@@ -39,6 +39,8 @@ _archive_*/
 # Secrets — DO NOT COMMIT
 LibriumFinal/Models/Config/Secrets.swift
 **/Secrets.swift
+LibriumFinal/GoogleService-Info.plist
+**/GoogleService-Info.plist
 *.p12
 *.p8
 *.cer
