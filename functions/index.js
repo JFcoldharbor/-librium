@@ -1,5 +1,6 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const { OpenAI } = require("openai");
@@ -12,6 +13,7 @@ const mariaChat = require("./src/mariaChat");
 const scanner = require("./src/scanner");
 const eventPage = require("./src/eventPage");
 const eventsDiscovery = require("./src/eventsDiscovery");
+const eventNotifications = require("./src/eventNotifications");
 
 exports.mariaChat = onRequest(
   {
@@ -43,6 +45,17 @@ exports.eventsDiscovery = onRequest(
     timeoutSeconds: 30
   },
   async (req, res) => eventsDiscovery.handle(req, res)
+);
+
+// Firestore trigger — emails the host when a new attendee RSVPs, and emails
+// the attendee a confirmation. Writes mail-shaped docs to mail/{id}; the
+// "Trigger Email from Firestore" Firebase Extension actually sends them.
+exports.onEventRsvpEmail = onDocumentWritten(
+  {
+    document: "events/{eventId}",
+    region: "us-central1"
+  },
+  async (event) => eventNotifications.handle(event)
 );
 
 // Manual scanner trigger — POST { userId, kind } with bearer auth.
