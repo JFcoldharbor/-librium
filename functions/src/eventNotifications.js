@@ -1,18 +1,19 @@
 "use strict";
 
 const admin = require("firebase-admin");
+const userTier = require("./userTier");
 
 // Firestore trigger handler — runs on every events/{id} write.
-// Detects newly-added attendees (diffing the attendees array by id),
-// then enqueues:
-//   1. A "new RSVP" email to the host
-//   2. A confirmation email to the attendee (if they provided an address)
+// Detects newly-added attendees (diffing the attendees array by id), then:
+//   1. Enqueues a "new RSVP" email to the host
+//   2. Enqueues a confirmation email to the attendee (if they have an address)
+//   3. Activates an event-trial on the attendee's profile (if a Firebase
+//      Auth account exists for their email) — gives them full Maria from
+//      now through 48h after event end
 //
 // Emails are written as mail/{id} docs in the shape the Firebase Extension
 // "Trigger Email from Firestore" expects:
 //   { to: [email], message: { subject, text, html } }
-// Install that extension once on the Firebase console with SMTP credentials
-// (SendGrid free tier is the typical pick) and these docs will be sent.
 
 const HOST_URL = "https://librium-f1a78.web.app";
 
@@ -42,6 +43,8 @@ async function handle(event) {
 
   const totalRsvps = afterAttendees.length;
 
+  const eventForTrial = { id: eventId, endDate };
+
   for (const attendee of newAttendees) {
     try {
       if (hostEmail) {
@@ -54,8 +57,11 @@ async function handle(event) {
           buildAttendeeMail({ attendee, eventName, startDate, endDate, venue, eventUrl })
         );
       }
+      // Activate event trial — extends user's eventTrialUntil to event end + 48h.
+      // No-op if attendee has no email or no matching auth account.
+      await userTier.activateTrialForAttendee({ attendee, event: eventForTrial });
     } catch (e) {
-      console.error(`Failed to enqueue mail for attendee ${attendee?.id}:`, e.message);
+      console.error(`Failed to process attendee ${attendee?.id}:`, e.message);
     }
   }
 }

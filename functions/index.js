@@ -14,6 +14,7 @@ const scanner = require("./src/scanner");
 const eventPage = require("./src/eventPage");
 const eventsDiscovery = require("./src/eventsDiscovery");
 const eventNotifications = require("./src/eventNotifications");
+const userTier = require("./src/userTier");
 
 exports.mariaChat = onRequest(
   {
@@ -121,18 +122,28 @@ const scheduledScannerOptions = (schedule) => ({
 
 async function runScheduledScan(kind) {
   const uids = await scanner.listActiveUserIds();
-  console.log(`[scanner:${kind}] running for ${uids.length} users`);
+  console.log(`[scanner:${kind}] checking ${uids.length} users`);
+  let ran = 0;
+  let skipped = 0;
   for (const uid of uids) {
     try {
+      // Tier gate — scanner only fires for paid users or active event-trial users.
+      const tier = await userTier.getUserTier(uid);
+      if (tier.effective !== "full") {
+        skipped++;
+        continue;
+      }
       await scanner.runScannerForUser({
         uid,
         kind,
         openaiKey: openaiKey.value()
       });
+      ran++;
     } catch (e) {
       console.error(`[scanner:${kind}] failed for ${uid}:`, e.message);
     }
   }
+  console.log(`[scanner:${kind}] ran=${ran} skipped(free)=${skipped}`);
 }
 
 exports.scannerMorning = onSchedule(scheduledScannerOptions("30 6 * * *"), async () => {
