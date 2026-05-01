@@ -116,8 +116,14 @@ function renderHtml(events) {
   const now = new Date();
   const cards = events.length > 0
     ? events.map(e => eventCard(e, now)).join("\n")
-    : `<div class="discover-empty">
-        <p>No upcoming events yet. Check back soon, or create one in the Equilibrium app.</p>
+    : `<div class="discover-empty discover-empty-rich">
+        <div class="discover-empty-badge">⌬</div>
+        <h2 class="discover-empty-title">No upcoming events on Equilibrium yet.</h2>
+        <p class="discover-empty-body">Be the first to host one. Your guests get full Maria for the event window — pre-event briefings, in-event introductions, post-event follow-through. Free to them.</p>
+        <div class="discover-empty-actions">
+          <a href="/create" class="cta-primary">Host an event</a>
+          <a href="/host" class="cta-secondary">Why partner with us</a>
+        </div>
       </div>`;
 
   return `<!DOCTYPE html>

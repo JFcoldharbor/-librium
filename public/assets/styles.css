@@ -582,6 +582,50 @@ h1.event-name {
   color: var(--secondary);
 }
 
+.discover-empty-rich {
+  background: linear-gradient(180deg, rgba(64, 191, 200, 0.06) 0%, rgba(0, 0, 0, 0.3) 100%);
+  border: 1px dashed var(--network-stroke);
+  padding: 56px 28px 48px;
+}
+
+.discover-empty-badge {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: rgba(64, 191, 200, 0.18);
+  border: 1px solid var(--network-stroke);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--network);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.discover-empty-title {
+  font-size: clamp(22px, 3.5vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+.discover-empty-body {
+  max-width: 480px;
+  margin: 0 auto 24px;
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.discover-empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .confirmation {
   text-align: center;
   padding: 50px 20px 30px;
