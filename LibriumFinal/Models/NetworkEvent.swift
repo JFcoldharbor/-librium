@@ -21,6 +21,7 @@ struct NetworkEvent: Codable, Identifiable, Equatable {
         var role: String?
         var organization: String?
         var contactId: String?
+        var intent: AttendeeIntent?
 
         init(
             id: UUID = UUID(),
@@ -28,7 +29,8 @@ struct NetworkEvent: Codable, Identifiable, Equatable {
             email: String? = nil,
             role: String? = nil,
             organization: String? = nil,
-            contactId: String? = nil
+            contactId: String? = nil,
+            intent: AttendeeIntent? = nil
         ) {
             self.id = id
             self.name = name
@@ -36,7 +38,13 @@ struct NetworkEvent: Codable, Identifiable, Equatable {
             self.role = role
             self.organization = organization
             self.contactId = contactId
+            self.intent = intent
         }
+
+        /// Effective intent — explicitly set OR the platform default.
+        /// Existing attendees from before intent shipped fall through to
+        /// `social`, never `romantic`.
+        var resolvedIntent: AttendeeIntent { intent ?? .default }
     }
 
     var isLive: Bool {

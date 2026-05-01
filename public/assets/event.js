@@ -180,6 +180,8 @@ function renderConfirmation(eventName) {
   `;
 }
 
+const VALID_INTENTS = new Set(["professional", "social", "friends", "romantic", "observing"]);
+
 function bindRSVP(eventId, event) {
   const form = document.getElementById("rsvp-form");
   if (!form) return;
@@ -191,11 +193,13 @@ function bindRSVP(eventId, event) {
     button.textContent = "Saving…";
 
     const data = new FormData(form);
+    const intent = String(data.get("intent") || "social").trim();
     const newAttendee = {
       id: uuid(),
       name: String(data.get("name") || "").trim(),
       email: String(data.get("email") || "").trim().toLowerCase(),
       joinedAt: Timestamp.now(),
+      intent: VALID_INTENTS.has(intent) ? intent : "social",
     };
     const role = String(data.get("role") || "").trim();
     if (role) newAttendee.role = role;
@@ -299,7 +303,54 @@ function renderEvent(eventId, eventData) {
         <input type="text" name="name" placeholder="Your name" required autocomplete="name">
         <input type="email" name="email" placeholder="Your email" required autocomplete="email">
         <input type="text" name="role" placeholder="Role / what you do (optional)" autocomplete="organization-title">
+
+        <fieldset class="intent-fieldset">
+          <legend>What are you here for?</legend>
+          <p class="intent-fieldset-hint">The room shows you only people whose vibe matches yours.</p>
+
+          <label class="intent-option">
+            <input type="radio" name="intent" value="professional">
+            <span class="intent-option-body">
+              <span class="intent-option-title">Just professional, please</span>
+              <span class="intent-option-detail">Networking, job stuff, business connections.</span>
+            </span>
+          </label>
+
+          <label class="intent-option">
+            <input type="radio" name="intent" value="social" checked>
+            <span class="intent-option-body">
+              <span class="intent-option-title">Open to anything social</span>
+              <span class="intent-option-detail">Friendly conversations, no expectations.</span>
+            </span>
+          </label>
+
+          <label class="intent-option">
+            <input type="radio" name="intent" value="friends">
+            <span class="intent-option-body">
+              <span class="intent-option-title">Looking for friends</span>
+              <span class="intent-option-detail">People you'd grab coffee with again.</span>
+            </span>
+          </label>
+
+          <label class="intent-option">
+            <input type="radio" name="intent" value="romantic">
+            <span class="intent-option-body">
+              <span class="intent-option-title">Open to meeting someone special</span>
+              <span class="intent-option-detail">Only visible to others who chose this too.</span>
+            </span>
+          </label>
+
+          <label class="intent-option">
+            <input type="radio" name="intent" value="observing">
+            <span class="intent-option-body">
+              <span class="intent-option-title">Just here to observe</span>
+              <span class="intent-option-detail">You see no one, no one sees you.</span>
+            </span>
+          </label>
+        </fieldset>
+
         <button type="submit" id="rsvp-btn">I'm in</button>
+        <p class="rsvp-fineprint">Your intent is per-event. Change it any time during the event.</p>
       </form>
     </div>
     `

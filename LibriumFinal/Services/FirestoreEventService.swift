@@ -120,6 +120,7 @@ final class FirestoreEventService {
         if let role = attendee.role { dict["role"] = role }
         if let org = attendee.organization { dict["organization"] = org }
         if let cid = attendee.contactId { dict["contactId"] = cid }
+        if let intent = attendee.intent { dict["intent"] = intent.rawValue }
         return dict
     }
 
@@ -151,13 +152,15 @@ final class FirestoreEventService {
     private func decodeAttendee(_ dict: [String: Any]) -> NetworkEvent.Attendee? {
         guard let name = dict["name"] as? String else { return nil }
         let id = (dict["id"] as? String).flatMap { UUID(uuidString: $0) } ?? UUID()
+        let intent = (dict["intent"] as? String).flatMap { AttendeeIntent(rawValue: $0) }
         return NetworkEvent.Attendee(
             id: id,
             name: name,
             email: dict["email"] as? String,
             role: dict["role"] as? String,
             organization: dict["organization"] as? String,
-            contactId: dict["contactId"] as? String
+            contactId: dict["contactId"] as? String,
+            intent: intent
         )
     }
 }
