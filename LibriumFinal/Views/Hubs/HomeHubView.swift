@@ -4,9 +4,11 @@ struct HomeHubView: View {
     let geometry: GeometryProxy
 
     @StateObject private var viewModel = HomeHubViewModel()
+    @StateObject private var activeEventCoordinator = ActiveEventCoordinator.shared
     @State private var showSettings = false
     @State private var showBalanceDetail = false
     @State private var showImportantDates = false
+    @State private var presentedActiveEvent: NetworkEvent?
 
     var body: some View {
         ZStack {
@@ -24,6 +26,13 @@ struct HomeHubView: View {
 
             VStack(spacing: 16) {
                 topBar
+
+                if let activeEvent = activeEventCoordinator.activeEvent {
+                    EventModeBanner(event: activeEvent) {
+                        presentedActiveEvent = activeEvent
+                    }
+                    .padding(.horizontal, 24)
+                }
 
                 Button(action: { showBalanceDetail = true }) {
                     BalancePill(score: viewModel.balanceScore)
@@ -64,6 +73,10 @@ struct HomeHubView: View {
         }
         .sheet(isPresented: $showImportantDates) {
             ImportantDatesView()
+                .preferredColorScheme(.dark)
+        }
+        .sheet(item: $presentedActiveEvent) { event in
+            NetworkEventDetailSheet(event: event, mode: .detail)
                 .preferredColorScheme(.dark)
         }
     }
