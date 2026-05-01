@@ -11,49 +11,73 @@ const admin = require("firebase-admin");
 const HOST = "https://librium-f1a78.web.app";
 
 async function handle(req, res) {
-  const path = req.path || "";
-  const match = path.match(/^\/e\/([0-9A-Fa-f-]{8,})\/?$/);
-  if (!match) {
-    res.status(404).type("text/html").send(notFoundHtml());
-    return;
-  }
-  const eventId = match[1].toUpperCase();
+  // The exact path/url shape varies between Firebase Hosting rewrites, direct
+  // Cloud Run invocation, and local emulators. Look for a UUID-shaped string
+  // anywhere in any of the request's path/url/header sources — robust to all.
+  const candidates = [];
+  if (req.path) candidates.push(req.path);
+  if (req.url) candidates.push(req.url);
+  if (req.originalUrl) candidates.push(req.originalUrl);
+  if (req.headers && req.headers["x-original-url"]) candidates.push(req.headers["x-original-url"]);
+  if (req.headers && req.headers["x-forwarded-uri"]) candidates.push(req.headers["x-forwarded-uri"]);
 
+  const uuidRegex = /([0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})/;
+  let eventId = null;
+  for (const c of candidates) {
+    const match = String(c).match(uuidRegex);
+    if (match) {
+      eventId = match[1].toUpperCase();
+      break;
+    }
+  }
+
+  // Try to fetch the event for OG metadata, but never fail the page over it.
+  // event.js on the client always renders from window.location.pathname,
+  // so the user gets the interactive page either way.
   let event = null;
-  try {
-    const snap = await admin.firestore().collection("events").doc(eventId).get();
-    if (snap.exists) event = snap.data();
-  } catch (e) {
-    console.warn("eventPage Firestore error:", e.message);
+  if (eventId) {
+    try {
+      const snap = await admin.firestore().collection("events").doc(eventId).get();
+      if (snap.exists) event = snap.data();
+    } catch (e) {
+      console.warn("eventPage Firestore error:", e.message);
+    }
+  } else {
+    console.warn("eventPage: no eventId found in", candidates);
   }
 
-  if (!event) {
-    res.status(404).type("text/html").send(eventHtml({
+  res.set("Cache-Control", "public, max-age=300, s-maxage=300");
+
+  if (event) {
+    const name = String(event.name || "Untitled event");
+    const host = event.host ? `Hosted by ${event.host}` : "Equilibrium event";
+    const startDate = toDate(event.startDate);
+    const venue = event.venue || null;
+    const imageUrl = event.imageUrl || null;
+    const dateLine = formatDateLine(startDate);
+    const description = [host, dateLine, venue].filter(Boolean).join(" · ");
+
+    res.status(200).type("text/html").send(eventHtml({
       eventId,
-      title: "Event not found · Equilibrium",
-      description: "This event doesn't exist or was deleted.",
-      ogTitle: "Event not found",
-      ogDescription: "Equilibrium event"
+      title: `${name} · Equilibrium`,
+      description,
+      ogTitle: name,
+      ogDescription: description,
+      ogImage: imageUrl
     }));
     return;
   }
 
-  const name = String(event.name || "Untitled event");
-  const host = event.host ? `Hosted by ${event.host}` : "Equilibrium event";
-  const startDate = toDate(event.startDate);
-  const venue = event.venue || null;
-  const imageUrl = event.imageUrl || null;
-  const dateLine = formatDateLine(startDate);
-  const description = [host, dateLine, venue].filter(Boolean).join(" · ");
-
-  res.set("Cache-Control", "public, max-age=300, s-maxage=300");
+  // Fallback: render the shell with generic metadata. Client-side event.js
+  // will parse window.location.pathname and render interactively (or show
+  // "Event not found" itself if the URL is genuinely bogus).
   res.status(200).type("text/html").send(eventHtml({
-    eventId,
-    title: `${name} · Equilibrium`,
-    description,
-    ogTitle: name,
-    ogDescription: description,
-    ogImage: imageUrl
+    eventId: eventId || "",
+    title: "Event · Equilibrium",
+    description: "An Equilibrium event.",
+    ogTitle: "Equilibrium event",
+    ogDescription: "An Equilibrium event.",
+    ogImage: null
   }));
 }
 
