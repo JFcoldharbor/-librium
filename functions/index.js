@@ -15,6 +15,7 @@ const eventPage = require("./src/eventPage");
 const eventsDiscovery = require("./src/eventsDiscovery");
 const eventNotifications = require("./src/eventNotifications");
 const userTier = require("./src/userTier");
+const eventSuggestion = require("./src/eventSuggestion");
 
 exports.mariaChat = onRequest(
   {
@@ -36,6 +37,52 @@ exports.eventPage = onRequest(
     timeoutSeconds: 30
   },
   async (req, res) => eventPage.handle(req, res)
+);
+
+// Generates a per-user event suggestion (ranked attendees + conversation
+// openers) and writes it to users/{uid}/eventSuggestions/{eventId}.
+// iOS calls this on-demand when entering Event Mode.
+exports.mariaEventSuggestion = onRequest(
+  {
+    region: "us-central1",
+    secrets: [openaiKey],
+    memory: "512MiB",
+    timeoutSeconds: 60
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Missing bearer token" });
+    }
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    } catch (e) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    const { eventId } = req.body || {};
+    if (!eventId || typeof eventId !== "string") {
+      return res.status(400).json({ error: "eventId required" });
+    }
+    try {
+      const output = await eventSuggestion.runEventSuggestionForUser({
+        uid: decoded.uid,
+        eventId,
+        openaiKey: openaiKey.value()
+      });
+      return res.status(200).json({
+        ok: true,
+        attendeeCount: output.attendeeCount,
+        userVibe: output.userVibe
+      });
+    } catch (e) {
+      console.error("mariaEventSuggestion error:", e.message);
+      return res.status(500).json({ error: e.message });
+    }
+  }
 );
 
 // Public discovery list of upcoming events at /discover. Server-rendered.

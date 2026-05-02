@@ -18,6 +18,7 @@ struct EventModeHomeView: View {
 
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var eventService = NetworkEventService.shared
+    @ObservedObject private var suggestionService = EventSuggestionService.shared
     @State private var showStandardDetail = false
     @State private var showIntentSheet = false
     @State private var myIntent: AttendeeIntent = .default
@@ -25,6 +26,10 @@ struct EventModeHomeView: View {
     @State private var currentIndex: Int = 0
 
     enum RoomMode { case remote, list }
+
+    private var suggestion: EventSuggestion? {
+        suggestionService.byEventId[event.id]
+    }
 
     /// Live event from the service so attendees update in real-time during
     /// the active window without needing to dismiss + reopen.
@@ -76,10 +81,20 @@ struct EventModeHomeView: View {
                 onSelect: { picked in
                     myIntent = picked
                     showIntentSheet = false
+                    // Re-run the suggestion since the user's vibe affects
+                    // ranking + which candidates are visible.
+                    Task { await suggestionService.refresh(eventId: event.id) }
                 },
                 onDismiss: { showIntentSheet = false }
             )
             .preferredColorScheme(.dark)
+        }
+        .onAppear {
+            suggestionService.observe(eventId: event.id)
+            Task { await suggestionService.refresh(eventId: event.id) }
+        }
+        .onDisappear {
+            suggestionService.stopObserving(eventId: event.id)
         }
     }
 
@@ -391,8 +406,12 @@ struct EventModeHomeView: View {
     }
 
     private func openerPlaceholder(for attendee: NetworkEvent.Attendee) -> String {
-        // TODO Sprint 2b-3: replace with server-side scanner-generated opener
-        // tied to mutual connections + user's active goals + the attendee's role.
+        // Prefer server-generated opener when available (ranked + tailored to
+        // mutuals/goals via mariaEventSuggestion). Falls back to intent-keyed
+        // template when the server hasn't run yet.
+        if let server = suggestion?.opener(for: attendee.id), !server.isEmpty {
+            return server
+        }
         switch attendee.resolvedIntent {
         case .professional:
             if let role = attendee.role, !role.isEmpty {
@@ -429,9 +448,15 @@ struct EventModeHomeView: View {
     }
 
     private var visibleAttendees: [NetworkEvent.Attendee] {
-        liveEvent.attendees.filter { attendee in
+        let filtered = liveEvent.attendees.filter { attendee in
             myIntent.sees(attendee.resolvedIntent)
         }
+        // If the server has ranked these attendees for this user, use that
+        // order. Otherwise fall back to the raw attendee order.
+        if let suggestion {
+            return suggestion.ordered(filtered)
+        }
+        return filtered
     }
 
     private var observingState: some View {
